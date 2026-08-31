@@ -1,0 +1,64 @@
+﻿{
+    "FileVersion": 3,
+    "Version": 1,
+    "VersionName": "1.0",
+    "FriendlyName": "XSJArtTools",
+    "Description": "XSJ art production tools.",
+    "Category": "Other",
+    "CreatedBy": "Seasun_TA",
+    "CreatedByURL": "",
+    "DocsURL": "",
+    "MarketplaceURL": "",
+    "SupportURL": "",
+    "CanContainContent": true,
+    "IsBetaVersion": false,
+    "IsExperimentalVersion": false,
+    "Installed": false,
+    "Plugins": [
+        {
+            "Name": "ControlRig",
+            "Enabled": true
+        },
+        {
+            "Name": "RigVM",
+            "Enabled": true
+        }
+    ],
+    "Modules": [
+        {
+            "Name": "XSJArtToolsCore",
+            "Type": "Editor",
+            "LoadingPhase": "Default"
+        },
+        {
+            "Name": "XSJAssetToolsEditor",
+            "Type": "Editor",
+            "LoadingPhase": "Default"
+        },
+        {
+            "Name": "XSJCharacterToolsEditor",
+            "Type": "Editor",
+            "LoadingPhase": "Default"
+        },
+        {
+            "Name": "XSJEnvironmentToolsEditor",
+            "Type": "Editor",
+            "LoadingPhase": "Default"
+        },
+        {
+            "Name": "XSJBlueprintToJsonEditor",
+            "Type": "Editor",
+            "LoadingPhase": "Default"
+        },
+        {
+            "Name": "XSJControlRigToJsonEditor",
+            "Type": "Editor",
+            "LoadingPhase": "Default"
+        },
+        {
+            "Name": "XSJSkeletonRefPoseToJsonEditor",
+            "Type": "Editor",
+            "LoadingPhase": "Default"
+        }
+    ]
+}

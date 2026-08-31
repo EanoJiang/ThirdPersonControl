@@ -1,0 +1,34 @@
+{
+	"FileVersion": 3,
+	"Version": 3,
+	"VersionName": "1.2",
+	"FriendlyName": "GraphShot",
+	"Description": "Capture complete screenshots of any graph editor (all nodes, including off-screen) to the clipboard.",
+	"Category": "Editor",
+	"CreatedBy": "Eano",
+	"CreatedByURL": "",
+	"DocsURL": "",
+	"MarketplaceURL": "",
+	"SupportURL": "",
+	"CanContainContent": false,
+	"IsBetaVersion": false,
+	"IsExperimentalVersion": false,
+	"Installed": false,
+	"Plugins": [
+		{
+			"Name": "ControlRig",
+			"Enabled": true
+		},
+		{
+			"Name": "RigVM",
+			"Enabled": true
+		}
+	],
+	"Modules": [
+		{
+			"Name": "GraphShotEditor",
+			"Type": "Editor",
+			"LoadingPhase": "Default"
+		}
+	]
+}
