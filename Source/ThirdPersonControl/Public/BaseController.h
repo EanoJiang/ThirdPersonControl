@@ -21,20 +21,20 @@ public:
 	ABaseController();
 
 	//步态
-	UPROPERTY(BlueprintReadWrite, Category = Gait)
+	UPROPERTY(BlueprintReadWrite, Category = "Gait")
 	TMap<EGroundGait, FSGaitSettings> GaitSettings;
-	UPROPERTY(BlueprintReadWrite, Category = Gait)
+	UPROPERTY(BlueprintReadWrite, Category = "Gait")
 	EGroundGait CurrentGroundGait;
-	UPROPERTY(BlueprintReadWrite, Category = Gait)
+	UPROPERTY(BlueprintReadWrite, Category = "Gait")
 	EGroundGait PreviousGroundGait;
 	//旋转模式
-	UPROPERTY(BlueprintReadWrite, Category = RotationMode)
+	UPROPERTY(BlueprintReadWrite, Category = "RotationMode")
 	ERotationMode CurrentRotationMode;
-	UPROPERTY(BlueprintReadWrite, Category = RotationMode)
+	UPROPERTY(BlueprintReadWrite, Category = "RotationMode")
 	ERotationMode PreviousRotationMode;
 
 	//Anim实例
-	UPROPERTY(BlueprintReadWrite, Category = Anim)
+	UPROPERTY(BlueprintReadWrite, Category = "Anim")
 	UAnimInstance* MainAnimInstance;
 
 	
