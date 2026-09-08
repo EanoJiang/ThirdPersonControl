@@ -37,6 +37,9 @@ public:
 	UPROPERTY(BlueprintReadWrite, Category = "Anim")
 	UAnimInstance* MainAnimInstance;
 
+	//当前为手柄输入
+	UPROPERTY(BlueprintReadWrite, Category = "Input")
+	bool bIsGamepadInput = false;
 	
 protected:
 	// Called when the game starts or when spawned

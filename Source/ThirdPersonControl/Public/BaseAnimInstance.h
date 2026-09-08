@@ -65,6 +65,10 @@ public:
 	float AnimPlaySpeed = 1.0f;
 	UPROPERTY(BlueprintReadWrite, Category = "Curve")
 	FName SpeedCurveName = FName("MotionSpeed");
+	
+	//当前为手柄输入
+	UPROPERTY(BlueprintReadWrite, Category = "Input")
+	bool bIsGamepadInput = false;
 
 	//计算动画蓝图需要的参数
 	UFUNCTION(BlueprintCallable, Category = "UpdateData")

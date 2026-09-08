@@ -1,4 +1,10 @@
 ```
+	//当前为手柄输入
+	UPROPERTY(BlueprintReadWrite, Category = "Input")
+	bool bIsGamepadInput = false;
+```
+
+```
 void UBaseAnimInstance::UpdateLeftFootUp()
 {
 	USkeletalMeshComponent* OwningComponent = GetOwningComponent();
@@ -290,6 +296,8 @@ void UBaseAnimInstance::UpdateEssentialData()
 
 }
 ```
+
+> 适配手柄：摇杆推进自动切换步态
 
 ```C++
 void UBaseAnimInstance::UpdateGroundGait()
@@ -843,4 +851,73 @@ Start State的序列播放器PlayRate绑定AnimPlaySpeed参数传入，并且设
 
 ![1788853907749](https://img2024.cnblogs.com/blog/3614909/202609/3614909-20260908155159234-874195882.gif)
 
-# Part999 根据当前抬起的脚选择Start和Stop动画
+# Part10 解决Walk转身起步时肩膀卡顿问题
+
+> 复现条件：Walk转身起步时突然摇杆往同一侧推到底
+> ![1788856059593](image/类GTA第三人称基础移动/1788856059593.gif)
+
+## 角色蓝图
+
+区分一下当前是否是手柄输入
+
+```C++
+	//当前为手柄输入
+	UPROPERTY(BlueprintReadWrite, Category = "Input")
+	bool bIsGamepadInput = false;
+```
+
+InputGraph.AnyKey
+
+![1788858563173](image/类GTA第三人称基础移动/1788858563173.png)
+
+```C++
+	//当前为手柄输入
+	UPROPERTY(BlueprintReadWrite, Category = "Input")
+	bool bIsGamepadInput = false;
+```
+
+```C++
+void UBaseAnimInstance::UpdateEssentialData()
+{
+	//Sequence 0:	RotationMode
+	if (AsBaseController != nullptr)
+	{
+		RotationMode = AsBaseController->CurrentRotationMode;
+		bIsGamepadInput = AsBaseController->bIsGamepadInput;
+	}
+```
+
+如果是手柄输入，只用90度的Start动画
+
+![1788861722064](image/类GTA第三人称基础移动/1788861722064.png)
+
+![1788861749549](image/类GTA第三人称基础移动/1788861749549.png)
+
+## 效果
+
+![1788866650314](image/类GTA第三人称基础移动/1788866650314.gif)
+
+## 解决突然45度转向时的角色突然转向
+
+> 原因：前向Start动画序列没有RotateAlpha信息
+
+在用到的前向Start动画序列中的rotatealpha加一小段
+
+![1788867712025](image/类GTA第三人称基础移动/1788867712025.png)
+
+## 加上StrideWarping节点
+
+> 优化滑步
+
+![1788869441095](image/类GTA第三人称基础移动/1788869441095.png)
+
+勾上InterpResult可以消除起步时的warping导致的掰腿卡顿现象
+
+![1788870484179](image/类GTA第三人称基础移动/1788870484179.png)
+
+# Part11 Cycle和同步组的设置
+
+
+# Part999_1 根据当前抬起的脚选择Start和Stop动画
+
+# Part999_2 移动时的身体倾斜

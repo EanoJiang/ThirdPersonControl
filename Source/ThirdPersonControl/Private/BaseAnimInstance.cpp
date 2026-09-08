@@ -14,6 +14,7 @@ void UBaseAnimInstance::UpdateEssentialData()
 	if (AsBaseController != nullptr)
 	{
 		RotationMode = AsBaseController->CurrentRotationMode;
+		bIsGamepadInput = AsBaseController->bIsGamepadInput;
 	}
 
 	if (MovementComponent != nullptr)
