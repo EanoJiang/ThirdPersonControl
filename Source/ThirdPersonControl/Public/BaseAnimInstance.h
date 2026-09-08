@@ -60,6 +60,12 @@ public:
 	UPROPERTY(BlueprintReadWrite, Category = "CharacterRotation")
 	float StartAngle = 0.0f;
 
+	//动画播放速率
+	UPROPERTY(BlueprintReadWrite, Category = "AnimPlayRate")
+	float AnimPlaySpeed = 1.0f;
+	UPROPERTY(BlueprintReadWrite, Category = "Curve")
+	FName SpeedCurveName = FName("MotionSpeed");
+
 	//计算动画蓝图需要的参数
 	UFUNCTION(BlueprintCallable, Category = "UpdateData")
 	void UpdateEssentialData();
@@ -86,4 +92,9 @@ public:
 	//Strafing模式下的旋转逻辑
 	UFUNCTION(BlueprintCallable, Category = "CharacterRotation", meta = (HideSelfPin = "true"))
 	void SmoothControlRotation(float TargetInterpSpeed, float ActorInterpSpeed);
+
+private:
+	FVector PreviousLeftFootLocation = FVector::ZeroVector;
+	FVector PreviousRightFootLocation = FVector::ZeroVector;
+	bool bHasPreviousFootSample = false;
 };

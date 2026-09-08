@@ -103,3 +103,10 @@ void ABaseController::SetMainAnimInstance()
 {
 	MainAnimInstance = GetMesh()->GetAnimInstance();
 }
+
+FVector2D ABaseController::FilterGamepadValue(const FVector2D& InputActionValue, float LowerThreshold) const
+{
+	return FVector2D(
+		FMath::Abs(InputActionValue.X) > LowerThreshold ? InputActionValue.X : 0.0f,
+		FMath::Abs(InputActionValue.Y) > LowerThreshold ? InputActionValue.Y : 0.0f);
+}

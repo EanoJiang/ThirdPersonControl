@@ -313,7 +313,8 @@ void UBaseAnimInstance::UpdateGroundGait()
 		GroundGait = EGroundGait::Idle;
 		return;
 	}
-
+  
+	//根据移动速度和推入系数判断是否可以切换到Run
 	const bool bCanRun =
 		bIsMoving
 		&& MovementComponent->GetMaxSpeed() > 250.0f
@@ -353,7 +354,7 @@ void UBaseAnimInstance::UpdateGroundGait()
 
 ![1788259160694](https://img2024.cnblogs.com/blog/3614909/202609/3614909-20260904171701872-499952415.png)
 
-# Part04 移动停止+选择表
+# Part04 移动停止+选择器表
 
 ## 判断左脚是否抬起(也就是左脚是否在前)
 
@@ -409,9 +410,7 @@ void UBaseAnimInstance::UpdateLeftFootUp()
 }
 ```
 
-## 选择表
-
-对所有Run_Stop动画序列添加距离曲线修改器
+## 动画序列添加Distance曲线修改器
 
 ![1788252857284](https://img2024.cnblogs.com/blog/3614909/202609/3614909-20260901174248546-1756897093.png)
 
@@ -426,6 +425,10 @@ void UBaseAnimInstance::UpdateLeftFootUp()
 > 那么相关动画的曲线必须使用 Uniform Indexable 压缩。否则编辑器里可能正常，打包后距离曲线查询可能失效，出现动画时间为 0、距离匹配不正确等问题。
 
 ![](https://img2024.cnblogs.com/blog/3614909/202609/3614909-20260901174249092-1830546549.png)
+
+## CT_StopState
+
+![1788770297642](https://img2024.cnblogs.com/blog/3614909/202609/3614909-20260907163825704-662631360.png)
 
 ## Stop State
 
@@ -527,7 +530,7 @@ InputGraph.StrafeAction
 void UBaseAnimInstance::SmoothVelocityRotation(const float TargetInterpSpeed, const float ActorInterpSpeed)
 {
 	//PrimaryRotation = LastVelocityRotation
-	PrimaryRotation = FMath::RInterpTo(
+	PrimaryRotation = FMath::RInterpConstantTo(
 		PrimaryRotation,
 		LastVelocityRotation,
 		DeltaTimeX,
@@ -580,6 +583,60 @@ void UBaseAnimInstance::SmoothControlRotation(const float TargetInterpSpeed, con
 }
 ```
 
+> 为什么计算用VelocityRotation的PrimaryRotation用`RInterpConstantTo`：
+>
+> 起步瞬间假设：
+>
+> ```
+> ActorRotation       = 0°
+> LastInputRotation   = 90°
+> LastVelocityRotation= 0°
+> ```
+>
+> `AnimSetup_Start` 先计算：
+>
+> ```
+> PrimaryRotation = 90°
+> StartAngle      = 90°
+> ```
+>
+> 原来的 `RInterpTo(..., 800)` 随后让 `PrimaryRotation` 一帧跳向旧速度方向：
+>
+> ```
+> PrimaryRotation：90° → 0°
+> ```
+>
+> Start 开头 `RotateAlpha = 1`：
+>
+> ```
+> TargetActorYaw
+> = PrimaryRotation - RotateAlpha × StartAngle
+> = 0° - 1 × 90°
+> = -90°
+> ```
+>
+> Actor 自己使用 `RInterpTo(..., 25)`。60 FPS 下：
+>
+> ```
+> Alpha = 25 / 60 ≈ 0.4167
+> ActorYaw = 0° + (-90°) × 0.4167
+>          ≈ -37.5°
+> ```
+>
+> 所以首帧角色被反向拉到大约 `-37.5°`。随后速度方向更新到新输入方向，`PrimaryRotation` 又跳回去，Actor 再往正确方向回拉，这就是“抽身”。
+>
+> 改成 [BaseAnimInstance.cpp (line 148)](D:/UE58Projects/ThirdPersonControl/Source/ThirdPersonControl/Private/BaseAnimInstance.cpp:148) 中的 `RInterpConstantTo` 后：
+>
+> ```
+> PrimaryRotation：90° → 76.67°
+> TargetActorYaw：76.67° - 90° = -13.33°
+> Actor 首帧：约 -5.56°
+> ```
+>
+> 反向误差被限制在很小的范围，不再产生明显抽身。
+>
+> 严格来说，`RInterpConstantTo` 也可能一帧到达目标，例如剩余角度小于 `800 × DeltaTime`。但它不会因为 `800 > 帧率` 就无条件吸附；这是两者最根本的区别。
+
 #### NoMovingRotation
 
 ![1788512736385](https://img2024.cnblogs.com/blog/3614909/202609/3614909-20260904171705044-1016836592.png)
@@ -589,3 +646,201 @@ void UBaseAnimInstance::SmoothControlRotation(const float TargetInterpSpeed, con
 ![1788513376408](https://img2024.cnblogs.com/blog/3614909/202609/3614909-20260904171706022-1148433937.gif)
 
 # Part06 Start资产选择
+
+## 动画序列添加左右脚标记、RotateAlpha曲线修改器
+
+> 一个前向起步，四个reface转向起步
+
+![1788514721937](https://img2024.cnblogs.com/blog/3614909/202609/3614909-20260907151706998-480791995.png)
+
+![1788514522495](https://img2024.cnblogs.com/blog/3614909/202609/3614909-20260907151707381-833881043.png)
+
+> 确保RotateAlpha曲线从1->0
+> 1代表有转向
+
+![1788514984711](https://img2024.cnblogs.com/blog/3614909/202609/3614909-20260907151707921-1697485165.png)
+
+## CT_StartState.Run.RunRotating
+
+添加动画序列,范围区间参考[【UE】角色偏航角Yaw.Rotation分布规则](https://www.cnblogs.com/eanojiang/p/22845556)
+
+![1788516152927](https://img2024.cnblogs.com/blog/3614909/202609/3614909-20260907151708456-81265498.png)
+
+选择器表Debug
+
+![1788768839725](https://img2024.cnblogs.com/blog/3614909/202609/3614909-20260907163342778-515847632.png)
+
+## Start State
+
+| 对比     | Sequence Player                 | Sequence Evaluator                                 |
+| -------- | ------------------------------- | -------------------------------------------------- |
+| 时间控制 | 节点内部自动累加时间            | 外部通过`Explicit Time`控制                      |
+| 默认表现 | 动画会持续播放，可循环          | 时间不变就停在某一帧                               |
+| 常见用途 | Idle、Walk、Run 等循环动画      | 距离匹配、落地、停止、按曲线或游戏逻辑控制动画进度 |
+| 使用难度 | 简单，设置动画和 Play Rate 即可 | 需要自己更新时间或传入计算结果                     |
+
+![1788748167289](https://img2024.cnblogs.com/blog/3614909/202609/3614909-20260907151708689-636314182.png)
+
+### AnimSetup_Start
+
+![1788748558731](https://img2024.cnblogs.com/blog/3614909/202609/3614909-20260907151708916-2049937875.png)
+
+### AnimUpdate_Start
+
+![1788748551013](https://img2024.cnblogs.com/blog/3614909/202609/3614909-20260907151709202-1081775779.png)
+
+## 效果
+
+![1788748754207](https://img2024.cnblogs.com/blog/3614909/202609/3614909-20260907151710182-1261351427.gif)
+
+# Part07 曲线过渡和伪回转运动
+
+> 出现问题：Start状态下开始转身前会有个抽身的动作
+> 原因：动画的转向角度是死的，角色实际转向角度是活的，因此需要利用RotateAlpha曲线对StartAngle值进行缩放。曲线是从1开始衰减到0的，但是状态机过渡时会对曲线值也进行过渡操作，为了解决这个问题需要引入DeadBlending节点过滤掉不需要blend的动画曲线
+
+## 引入DeadBlending节点
+
+打印RotateAlpha曲线值可以发现，RotateAlpha是从0开始变化到1再衰减为0的，而不是直接从1开始衰减，这就会导致前半段出现抽身的动作
+
+![1788749885721](https://img2024.cnblogs.com/blog/3614909/202609/3614909-20260907151710683-1137562493.png)
+
+因此在动画蓝图中需要在最后加一个DeadBlending节点，用于屏蔽状态机过渡时的曲线值过渡
+
+![1788750789389](https://img2024.cnblogs.com/blog/3614909/202609/3614909-20260907151710923-1133515554.png)
+
+## 效果
+
+![1788765420733](https://img2024.cnblogs.com/blog/3614909/202609/3614909-20260907151712472-518303694.gif)
+
+# Part08 Start和Stop时的步态切换逻辑
+
+![1788765673634](https://img2024.cnblogs.com/blog/3614909/202609/3614909-20260907163343340-1348927426.png)
+
+> 对需要用到的Start WalkRotating资产进行和Start RunRotating同样的操作(添加左右脚标记、RotateAlpha曲线修改器)[
+> ](#动画序列添加左右脚标记rotatealpha曲线修改器)![1788766399528](https://img2024.cnblogs.com/blog/3614909/202609/3614909-20260907163343751-1502314882.png)
+> 操作详见[【动画序列添加左右脚标记、RotateAlpha曲线修改器】](#动画序列添加左右脚标记rotatealpha曲线修改器)
+
+## CT_StartState的步态切换
+
+![1788769200565](https://img2024.cnblogs.com/blog/3614909/202609/3614909-20260907163343975-896898324.png)
+
+### CT_StartState.Walk.WalkRotating
+
+![1788769338166](https://img2024.cnblogs.com/blog/3614909/202609/3614909-20260907163344212-1076999669.png)
+
+## CT_StopState的步态切换
+
+> 对需要用到的Stop WalkRotating资产进行和Stop RunRotating同样的操作(添加Distance修改器)[
+> ](#选择表对所有run_stop动画序列添加距离曲线修改器)![1788769493488](https://img2024.cnblogs.com/blog/3614909/202609/3614909-20260907163344715-1960733068.png)
+> 操作详见[【动画序列添加Distance曲线修改器】](#动画序列添加distance曲线修改器)
+
+由于Stop状态时的EGroundGait已经更新为Idle，不能用EGroundGait来区分WalkStop和RunStop，因此用GroundSpeed区间来判定
+
+![1788773310398](https://img2024.cnblogs.com/blog/3614909/202609/3614909-20260908120639566-1149826352.png)
+
+## 效果
+
+![1788774311595](https://img2024.cnblogs.com/blog/3614909/202609/3614909-20260908120640970-861448970.gif)
+
+> 由于走路时只会有一只脚抬起，因此走路停步可以用判断哪只脚抬起来区分
+
+# Part09 解决手柄输入不满时的滑步问题
+
+## 角色蓝图
+
+### 引入死区
+
+InputGraph.IA_Move中根据阈值过滤手柄输入的 X/Y 轴
+
+![1788839013796](https://img2024.cnblogs.com/blog/3614909/202609/3614909-20260908120641575-489220926.png)
+
+```C++
+	//根据阈值过滤手柄输入的 X/Y 轴
+	UFUNCTION(BlueprintPure, Category = "Input", meta = (HideSelfPin = "true"))
+	FVector2D FilterGamepadValue(const FVector2D& InputActionValue, float LowerThreshold) const;
+```
+
+```C++
+FVector2D ABaseController::FilterGamepadValue(const FVector2D& InputActionValue, float LowerThreshold) const
+{
+	return FVector2D(
+		FMath::Abs(InputActionValue.X) > LowerThreshold ? InputActionValue.X : 0.0f,
+		FMath::Abs(InputActionValue.Y) > LowerThreshold ? InputActionValue.Y : 0.0f);
+}
+```
+
+## IMC_Default中的手柄Move输入加上死区修改器
+
+![1788785817420](https://img2024.cnblogs.com/blog/3614909/202609/3614909-20260908120642111-928204690.png)
+
+## 动画蓝图
+
+`MotionSpeed`曲线控制动画播放速率AnimPlayRate
+
+```C++
+	//动画播放速率
+	UPROPERTY(BlueprintReadWrite, Category = "AnimPlayRate")
+	float AnimPlaySpeed = 1.0f;
+	UPROPERTY(BlueprintReadWrite, Category = "Curve")
+	FName SpeedCurveName = FName("MotionSpeed");
+```
+
+```C++
+void UBaseAnimInstance::UpdateEssentialData()
+{
+	//Sequence 0:	RotationMode
+	if (AsBaseController != nullptr)
+	{
+		RotationMode = AsBaseController->CurrentRotationMode;
+	}
+
+	if (MovementComponent != nullptr)
+	{
+		//Sequence 1:	bIsMoving	LastVelocityRotation
+		const FVector Velocity = MovementComponent->Velocity;
+		GroundSpeed = Velocity.Size2D();
+		bIsMoving = GroundSpeed > 1.0f;
+		if (bIsMoving)
+		{
+			LastVelocityRotation = Velocity.Rotation();
+		}
+
+		//Sequence 2:	bHasInput	LastInputRotation
+		bHasInput = MovementComponent->GetAnalogInputModifier() > 0.0f;
+		if (bHasInput)
+		{
+			LastInputRotation = MovementComponent->GetLastInputVector().Rotation();
+		}
+	}
+
+	//Sequence 3:	bIsStrafing
+	if (AsBaseController != nullptr)
+	{
+		bIsStrafing = RotationMode != ERotationMode::Rotating;
+	}
+
+	//Sequence 4:	AnimPlaySpeed
+	const double SpeedRatio = UKismetMathLibrary::SafeDivide(
+		GroundSpeed,
+		GetCurveValue(SpeedCurveName));
+	AnimPlaySpeed = static_cast<float>(
+		FMath::Clamp(SpeedRatio, 0.8, 1.0)
+		);
+}
+```
+
+Start State的序列播放器PlayRate绑定AnimPlaySpeed参数传入，并且设置播放起点为0.1(防止起步动画开头顿一下)
+
+![1788840327011](https://img2024.cnblogs.com/blog/3614909/202609/3614909-20260908120642322-208262477.png)
+
+## 动画序列添加MotionSpeed曲线
+
+![1788838687400](https://img2024.cnblogs.com/blog/3614909/202609/3614909-20260908120642549-83426614.png)
+
+![1788838735056](https://img2024.cnblogs.com/blog/3614909/202609/3614909-20260908120642750-2070096319.png)
+
+## 效果
+
+![1788853907749](https://img2024.cnblogs.com/blog/3614909/202609/3614909-20260908155159234-874195882.gif)
+
+# Part999 根据当前抬起的脚选择Start和Stop动画

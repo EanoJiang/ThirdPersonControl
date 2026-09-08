@@ -1,0 +1,26 @@
+{
+	"FileVersion": 3,
+	"Version": 4,
+	"VersionName": "1.3",
+	"EngineVersion": "5.8.0",
+	"FriendlyName": "Foot Contact Curves",
+	"Description": "UE5.8 Animation Modifier that bakes contact_l / contact_r curves onto AnimSequences from foot bone height + speed thresholds. Compatible with Game Animation Sample Project (GASP) and any motion-matching pipeline that consumes per-foot contact gates.",
+	"Category": "Animation",
+	"CreatedBy": "Shane Beal",
+	"CreatedByURL": "",
+	"DocsURL": "",
+	"MarketplaceURL": "",
+	"SupportURL": "",
+	"EnabledByDefault": true,
+	"CanContainContent": false,
+	"IsBetaVersion": false,
+	"IsExperimentalVersion": false,
+	"Installed": false,
+	"Modules": [
+		{
+			"Name": "FootContactCurves",
+			"Type": "Editor",
+			"LoadingPhase": "Default"
+		}
+	]
+}

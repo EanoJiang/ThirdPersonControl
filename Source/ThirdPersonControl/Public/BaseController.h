@@ -59,4 +59,8 @@ public:
 	//建立Anim实例
 	UFUNCTION(BlueprintCallable, Category = "Anim", meta = (HideSelfPin = "true"))
 	void SetMainAnimInstance();
+
+	//根据阈值过滤手柄输入的 X/Y 轴
+	UFUNCTION(BlueprintPure, Category = "Input", meta = (HideSelfPin = "true"))
+	FVector2D FilterGamepadValue(const FVector2D& InputActionValue, float LowerThreshold) const;
 };

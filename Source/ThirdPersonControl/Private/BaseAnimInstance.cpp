@@ -6,41 +6,48 @@
 #include "Components/SkeletalMeshComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/Pawn.h"
+#include "Kismet/KismetMathLibrary.h"
 
 void UBaseAnimInstance::UpdateEssentialData()
 {
-	if (MovementComponent == nullptr)
-	{
-		GroundSpeed = 0.0f;
-		bIsMoving = false;
-		bHasInput = false;
-		return;
-	}
-
-	//Sequence 0:
+	//Sequence 0:	RotationMode
 	if (AsBaseController != nullptr)
 	{
 		RotationMode = AsBaseController->CurrentRotationMode;
 	}
 
-	//Sequence 1:
-	const FVector Velocity = MovementComponent->Velocity;
-	GroundSpeed = Velocity.Size2D();
-	bIsMoving = GroundSpeed > 1.0f;
-	if (bIsMoving)
+	if (MovementComponent != nullptr)
 	{
-		LastVelocityRotation = Velocity.Rotation();
+		//Sequence 1:	bIsMoving	LastVelocityRotation
+		const FVector Velocity = MovementComponent->Velocity;
+		GroundSpeed = Velocity.Size2D();
+		bIsMoving = GroundSpeed > 1.0f;
+		if (bIsMoving)
+		{
+			LastVelocityRotation = Velocity.Rotation();
+		}
+
+		//Sequence 2:	bHasInput	LastInputRotation
+		bHasInput = MovementComponent->GetAnalogInputModifier() > 0.0f;
+		if (bHasInput)
+		{
+			LastInputRotation = MovementComponent->GetLastInputVector().Rotation();
+		}
 	}
 
-	//Sequence 2:
-	bHasInput = MovementComponent->GetAnalogInputModifier() > 0.0f;
-	if (bHasInput)
+	//Sequence 3:	bIsStrafing
+	if (AsBaseController != nullptr)
 	{
-		LastInputRotation = MovementComponent->GetLastInputVector().Rotation();
+		bIsStrafing = RotationMode != ERotationMode::Rotating;
 	}
 
-	//Sequence 3:
-	bIsStrafing = RotationMode != ERotationMode::Rotating;
+	//Sequence 4:	AnimPlaySpeed
+	const double SpeedRatio = UKismetMathLibrary::SafeDivide(
+		GroundSpeed,
+		GetCurveValue(SpeedCurveName));
+	AnimPlaySpeed = static_cast<float>(
+		FMath::Clamp(SpeedRatio, 0.8, 1.0)
+		);
 }
 
 void UBaseAnimInstance::UpdateGroundGait()
@@ -63,7 +70,8 @@ void UBaseAnimInstance::UpdateGroundGait()
 		GroundGait = EGroundGait::Idle;
 		return;
 	}
-
+	
+	//根据移动速度和推入系数判断是否可以切换到Run
 	const bool bCanRun =
 		bIsMoving
 		&& MovementComponent->GetMaxSpeed() > 250.0f
@@ -145,7 +153,7 @@ float UBaseAnimInstance::SetStopAnimStartTime(
 void UBaseAnimInstance::SmoothVelocityRotation(const float TargetInterpSpeed, const float ActorInterpSpeed)
 {
 	//PrimaryRotation = LastVelocityRotation
-	PrimaryRotation = FMath::RInterpTo(
+	PrimaryRotation = FMath::RInterpConstantTo(
 		PrimaryRotation,
 		LastVelocityRotation,
 		DeltaTimeX,
