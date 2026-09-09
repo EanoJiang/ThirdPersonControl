@@ -66,4 +66,26 @@ public:
 	//根据阈值过滤手柄输入的 X/Y 轴
 	UFUNCTION(BlueprintPure, Category = "Input", meta = (HideSelfPin = "true"))
 	FVector2D FilterGamepadValue(const FVector2D& InputActionValue, float LowerThreshold) const;
+
+	/**
+	 * Reproduces the graph-driven Stride Warping scale calculation.
+	 * RootMotionSpeed should be the evaluated root-motion delta distance divided by
+	 * the animation graph delta time. Optional clamping matches the clamp stage of
+	 * the Stride Scale Modifier; its stateful interpolation is handled by the anim node.
+	 */
+	UFUNCTION(BlueprintPure, Category = "Animation|Stride Warping",
+		meta = (BlueprintThreadSafe, DisplayName = "Calculate Stride Warping Scale",
+			CompactNodeTitle = "Stride Scale",
+			AdvancedDisplay = "MinRootMotionSpeedThreshold,bClampResult,ClampMin,ClampMax",
+			CPP_Default_MinRootMotionSpeedThreshold = "10.0",
+			CPP_Default_bClampResult = "false",
+			CPP_Default_ClampMin = "0.0",
+			CPP_Default_ClampMax = "1.0"))
+	static float CalculateStrideWarpingScale(
+		float LocomotionSpeed,
+		float RootMotionSpeed,
+		float MinRootMotionSpeedThreshold = 10.0f,
+		bool bClampResult = false,
+		float ClampMin = 0.0f,
+		float ClampMax = 1.0f);
 };

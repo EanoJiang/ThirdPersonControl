@@ -205,3 +205,11 @@ void UBaseAnimInstance::SmoothControlRotation(const float TargetInterpSpeed, con
 
 	AsBaseController->SetActorRotation(NewActorRotation);
 }
+
+void UBaseAnimInstance::UpdateCurrentStateName(FName StateName)
+{
+	if (CurrentStateName != StateName)
+	{
+		CurrentStateName = StateName;
+	}
+}

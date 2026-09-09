@@ -110,3 +110,27 @@ FVector2D ABaseController::FilterGamepadValue(const FVector2D& InputActionValue,
 		FMath::Abs(InputActionValue.X) > LowerThreshold ? InputActionValue.X : 0.0f,
 		FMath::Abs(InputActionValue.Y) > LowerThreshold ? InputActionValue.Y : 0.0f);
 }
+
+float ABaseController::CalculateStrideWarpingScale(
+	const float LocomotionSpeed,
+	const float RootMotionSpeed,
+	const float MinRootMotionSpeedThreshold,
+	const bool bClampResult,
+	const float ClampMin,
+	const float ClampMax)
+{
+	float ActualStrideScale = 1.0f;
+
+	if (RootMotionSpeed > MinRootMotionSpeedThreshold
+		&& !FMath::IsNearlyZero(RootMotionSpeed))
+	{
+		ActualStrideScale = LocomotionSpeed / RootMotionSpeed;
+	}
+
+	if (bClampResult)
+	{
+		ActualStrideScale = FMath::Clamp(ActualStrideScale, ClampMin, ClampMax);
+	}
+
+	return FMath::IsFinite(ActualStrideScale) ? ActualStrideScale : 1.0f;
+}

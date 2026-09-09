@@ -4,6 +4,8 @@
 
 #include "CoreMinimal.h"
 #include "Animation/AnimInstance.h"
+#include "Animation/AnimExecutionContext.h"
+#include "Animation/AnimNodeReference.h"
 #include "BaseControllerData.h"
 #include "BaseAnimInstance.generated.h"
 
@@ -65,10 +67,13 @@ public:
 	float AnimPlaySpeed = 1.0f;
 	UPROPERTY(BlueprintReadWrite, Category = "Curve")
 	FName SpeedCurveName = FName("MotionSpeed");
-	
+
 	//当前为手柄输入
 	UPROPERTY(BlueprintReadWrite, Category = "Input")
 	bool bIsGamepadInput = false;
+	
+	UPROPERTY(BlueprintReadWrite, Category = "CharacterState")
+	FName CurrentStateName = FName("Idle");
 
 	//计算动画蓝图需要的参数
 	UFUNCTION(BlueprintCallable, Category = "UpdateData")
@@ -81,7 +86,7 @@ public:
 	//更新移动方向上的领先脚
 	UFUNCTION(BlueprintCallable, Category = "UpdateData")
 	void UpdateLeftFootUp();
-
+	
 	//根据 GroundSpeed 计算Stop动画起始播放时间
 	UFUNCTION(BlueprintPure, Category = "Animation", meta = (BlueprintThreadSafe, HideSelfPin = "true"))
 	float SetStopAnimStartTime(
@@ -97,8 +102,27 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "CharacterRotation", meta = (HideSelfPin = "true"))
 	void SmoothControlRotation(float TargetInterpSpeed, float ActorInterpSpeed);
 
-private:
-	FVector PreviousLeftFootLocation = FVector::ZeroVector;
-	FVector PreviousRightFootLocation = FVector::ZeroVector;
-	bool bHasPreviousFootSample = false;
+
+	//记录当前状态名
+	void UpdateCurrentStateName(FName StateName);
+	UFUNCTION(BlueprintCallable, Category = "Animation|State", meta = (BlueprintThreadSafe))
+	void OnStateEntry_Idle(const FAnimUpdateContext& Context,const FAnimNodeReference& Node)
+	{
+		UpdateCurrentStateName(FName("Idle"));
+	}
+	UFUNCTION(BlueprintCallable, Category = "Animation|State", meta = (BlueprintThreadSafe))
+	void OnStateEntry_Start(const FAnimUpdateContext& Context,const FAnimNodeReference& Node)
+	{
+		UpdateCurrentStateName(FName("Start"));
+	}
+	UFUNCTION(BlueprintCallable, Category = "Animation|State", meta = (BlueprintThreadSafe))
+	void OnStateEntry_Cycle(const FAnimUpdateContext& Context,const FAnimNodeReference& Node)
+	{
+		UpdateCurrentStateName(FName("Cycle"));
+	}
+	UFUNCTION(BlueprintCallable, Category = "Animation|State", meta = (BlueprintThreadSafe))
+	void OnStateEntry_Stop(const FAnimUpdateContext& Context,const FAnimNodeReference& Node)
+	{
+		UpdateCurrentStateName(FName("Stop"));
+	}
 };

@@ -695,6 +695,8 @@ void UBaseAnimInstance::SmoothControlRotation(const float TargetInterpSpeed, con
 
 ### AnimUpdate_Start
 
+> 由于要适配手柄操作，随着摇杆推进会自动切换步态，因此需要把资产选择的ChooserTable放在Update里面
+
 ![1788748551013](https://img2024.cnblogs.com/blog/3614909/202609/3614909-20260907151709202-1081775779.png)
 
 ## 效果
@@ -917,6 +919,44 @@ void UBaseAnimInstance::UpdateEssentialData()
 
 # Part11 Cycle和同步组的设置
 
+### 对需要用到的Cycle Walk和Cycle Run 添加左右脚标记、MotionSpeed曲线修改器
+
+ ![1788943550417](image/类GTA第三人称基础移动/1788943550417.png)![1788943559403](image/类GTA第三人称基础移动/1788943559403.png)
+
+> 添加左右脚标记详见：[动画序列添加左右脚标记、RotateAlpha曲线修改器](#动画序列添加左右脚标记rotatealpha曲线修改器)
+> MotionSpeed曲线修改器详见：[动画序列添加MotionSpeed曲线](#动画序列添加motionspeed曲线)
+
+### CT_CycleState
+
+![1788943538739](image/类GTA第三人称基础移动/1788943538739.png)
+
+![1788943585454](image/类GTA第三人称基础移动/1788943585454.png)
+
+![1788943575618](image/类GTA第三人称基础移动/1788943575618.png)
+
+## Cycle State
+
+![1788943969782](image/类GTA第三人称基础移动/1788943969782.png)
+
+![1788943983642](image/类GTA第三人称基础移动/1788943983642.png)
+
+## 设置同步组
+
+#### Cycle
+
+![1788944051580](image/类GTA第三人称基础移动/1788944051580.png)
+
+#### Start
+
+![1788944080340](image/类GTA第三人称基础移动/1788944080340.png)
+
+Start->Cycle的过渡时间改为0.5s，确保同步组正确匹配
+
+![1788943657439](image/类GTA第三人称基础移动/1788943657439.png)
+
+## 效果
+
+![1788948157586](image/类GTA第三人称基础移动/1788948157586.gif)
 
 # Part999_1 根据当前抬起的脚选择Start和Stop动画
 
