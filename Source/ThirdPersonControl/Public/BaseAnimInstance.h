@@ -11,6 +11,8 @@
 
 class ABaseController;
 class UCharacterMovementComponent;
+class UCanvas;
+class APlayerController;
 
 /**
  * 
@@ -125,4 +127,35 @@ public:
 	{
 		UpdateCurrentStateName(FName("Stop"));
 	}
+
+#pragma region DrawDebugMessages
+public:
+	virtual void NativeUninitializeAnimation() override;
+	virtual void BeginDestroy() override;
+
+	// 动画蓝图参数屏幕调试工具
+	UFUNCTION(BlueprintCallable, Category = "DebugDraw")
+	void DrawDebugKeyValueMessages(
+		FName Key,
+		const FString& Value,
+		FLinearColor KeyColor = FLinearColor::White,
+		FLinearColor ValueColor = FLinearColor::Red,
+		FVector LocationOffset = FVector(0, -200, 100));
+
+private:
+	struct FDebugKeyValueMessage
+	{
+		FString KeyText;
+		FString ValueText;
+		FLinearColor KeyColor;
+		FLinearColor ValueColor;
+		FVector WorldLocation;
+	};
+
+	TArray<FDebugKeyValueMessage> DebugKeyValueMessages;
+	uint64 DebugKeyValueFrame = MAX_uint64;
+	FDelegateHandle DebugKeyValueDrawHandle;
+	void DrawDebugKeyValueMessages(UCanvas* Canvas, APlayerController* PlayerController);
+	void ClearDebugKeyValueMessages();
+#pragma endregion DrawDebugMessages
 };

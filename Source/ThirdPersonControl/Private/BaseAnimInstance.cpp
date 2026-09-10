@@ -3,10 +3,138 @@
 
 #include "BaseAnimInstance.h"
 #include "BaseController.h"
+#include "CanvasItem.h"
+#include "Debug/DebugDrawService.h"
+#include "Engine/Canvas.h"
+#include "Engine/Engine.h"
+#include "GameFramework/PlayerController.h"
+#include "SceneInterface.h"
+#include "SceneView.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/Pawn.h"
 #include "Kismet/KismetMathLibrary.h"
+
+#pragma region DrawDebugMessages
+
+void UBaseAnimInstance::DrawDebugKeyValueMessages(
+	const FName Key,
+	const FString& Value,
+	const FLinearColor KeyColor,
+	const FLinearColor ValueColor,
+	const FVector LocationOffset)
+{
+#if ENABLE_ANIM_DRAW_DEBUG
+	if (!ensureMsgf(IsInGameThread(), TEXT("Draw Debug Key Value must run on the game thread.")))
+	{
+		return;
+	}
+	const USkeletalMeshComponent* Mesh = GetSkelMeshComponent();
+	const AActor* Owner = Mesh ? Mesh->GetOwner() : nullptr;
+	if (!Owner)
+	{
+		return;
+	}
+
+	FVector DrawLocationOffset = LocationOffset;
+	if (const APawn* PawnOwner = TryGetPawnOwner())
+	{
+		if (const APlayerController* PlayerController =
+			Cast<APlayerController>(PawnOwner->GetController()))
+		{
+			FVector ViewLocation;
+			FRotator ViewRotation;
+			PlayerController->GetPlayerViewPoint(ViewLocation, ViewRotation);
+
+			// XY 跟随完整相机旋转：X 沿视线前后，Y 沿相机左右。
+			// Z 单独叠加，继续保持世界向上。
+			DrawLocationOffset = ViewRotation.RotateVector(
+				FVector(LocationOffset.X, LocationOffset.Y, 0.0f))
+				+ FVector(0.0f, 0.0f, LocationOffset.Z);
+		}
+	}
+
+	if (DebugKeyValueFrame != GFrameCounter)
+	{
+		DebugKeyValueMessages.Reset();
+		DebugKeyValueFrame = GFrameCounter;
+	}
+	DebugKeyValueMessages.Add({Key.ToString() + TEXT(":"), Value,
+		KeyColor, ValueColor, Owner->GetActorLocation() + DrawLocationOffset});
+	if (!DebugKeyValueDrawHandle.IsValid())
+	{
+		DebugKeyValueDrawHandle = UDebugDrawService::Register(TEXT("Game"),
+			FDebugDrawDelegate::CreateUObject(this, &UBaseAnimInstance::DrawDebugKeyValueMessages));
+	}
+#endif
+}
+
+void UBaseAnimInstance::DrawDebugKeyValueMessages(UCanvas* Canvas, APlayerController* PlayerController)
+{
+#if ENABLE_ANIM_DRAW_DEBUG
+	// Debug draw can be called for other editor/PIE worlds. Never leak text into those views.
+	if (!Canvas || !Canvas->Canvas || !Canvas->SceneView || !GEngine
+		|| !Canvas->SceneView->Family || !Canvas->SceneView->Family->Scene
+		|| Canvas->SceneView->Family->Scene->GetWorld() != GetWorld()
+		|| DebugKeyValueFrame == MAX_uint64 || GFrameCounter - DebugKeyValueFrame > 1)
+	{
+		return;
+	}
+	UFont* Font = GEngine->GetSmallFont();
+	if (!Font)
+	{
+		return;
+	}
+	// Reset for each viewport draw; stack this instance's messages in submission order.
+	float LineOffsetY = 0.0f;
+	constexpr float LineSpacing = 4.0f;
+	for (const FDebugKeyValueMessage& Message : DebugKeyValueMessages)
+	{
+		if (Canvas->SceneView->WorldToScreen(Message.WorldLocation).W <= 0.0f)
+		{
+			continue;
+		}
+		const FVector ScreenLocation = Canvas->Project(Message.WorldLocation);
+		const FVector2D TextPosition(ScreenLocation.X, ScreenLocation.Y + LineOffsetY);
+		float KeyWidth = 0.0f;
+		float KeyHeight = 0.0f;
+		Canvas->StrLen(Font, Message.KeyText, KeyWidth, KeyHeight);
+		FCanvasTextItem KeyItem(TextPosition, FText::FromString(Message.KeyText), Font, Message.KeyColor);
+		Canvas->DrawItem(KeyItem);
+		// Canvas does not reliably expand tabs; use an explicit screen-space gap.
+		constexpr float KeyValueGap = 24.0f;
+		FCanvasTextItem ValueItem(TextPosition + FVector2D(KeyWidth + KeyValueGap, 0.0f),
+			FText::FromString(Message.ValueText), Font, Message.ValueColor);
+		Canvas->DrawItem(ValueItem);
+		LineOffsetY += KeyHeight + LineSpacing;
+	}
+#endif
+}
+
+void UBaseAnimInstance::ClearDebugKeyValueMessages()
+{
+	if (DebugKeyValueDrawHandle.IsValid())
+	{
+		UDebugDrawService::Unregister(DebugKeyValueDrawHandle);
+		DebugKeyValueDrawHandle.Reset();
+	}
+	DebugKeyValueMessages.Reset();
+	DebugKeyValueFrame = MAX_uint64;
+}
+
+void UBaseAnimInstance::BeginDestroy()
+{
+	ClearDebugKeyValueMessages();
+	Super::BeginDestroy();
+}
+
+void UBaseAnimInstance::NativeUninitializeAnimation()
+{
+	ClearDebugKeyValueMessages();
+	Super::NativeUninitializeAnimation();
+}
+
+#pragma endregion DrawDebugMessages
 
 void UBaseAnimInstance::UpdateEssentialData()
 {
@@ -150,6 +278,7 @@ float UBaseAnimInstance::SetStopAnimStartTime(
 
 	return HighSpeedStartTime;
 }
+
 
 void UBaseAnimInstance::SmoothVelocityRotation(const float TargetInterpSpeed, const float ActorInterpSpeed)
 {
