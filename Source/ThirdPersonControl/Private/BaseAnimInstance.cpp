@@ -373,19 +373,7 @@ void UBaseAnimInstance::TurnInPlace_Rotating()
 
 	if (AsBaseController->bShouldAim)
 	{
-		if (const APlayerController* PlayerController =
-			Cast<APlayerController>(AsBaseController->GetController()))
-		{
-			FVector ViewLocation;
-			PlayerController->GetPlayerViewPoint(ViewLocation, TargetRotation);
-		}
-		else
-		{
-			TargetRotation = AsBaseController->GetControlRotation();
-		}
-
-		TargetRotation.Pitch = 0.0f;
-		TargetRotation.Roll = 0.0f;
+		TargetRotation = AsBaseController->GetControlRotation();
 	}
 
 	TurnInPlaceAngle = UKismetMathLibrary::NormalizedDeltaRotator(

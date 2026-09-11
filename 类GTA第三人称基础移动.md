@@ -1059,7 +1059,100 @@ Tick——如果有输入，就立刻恢复为RootMotion From Montages Only，�
 
 ![1789045568124](https://img2024.cnblogs.com/blog/3614909/202609/3614909-20260910210720553-1822242738.gif)
 
-# Part15 键盘输入时对步态切换的限制
+## Idle状态时的TurnInPlace
+
+角色蓝图基类
+
+```C++
+	UPROPERTY(BlueprintReadWrite, Category = "Input")
+	bool bShouldAim = false;
+```
+
+![1789118088241](https://img2024.cnblogs.com/blog/3614909/202609/3614909-20260911173943639-1449001572.png)
+
+![1789118069930](https://img2024.cnblogs.com/blog/3614909/202609/3614909-20260911173944041-790920713.png)
+
+动画蓝图基类
+
+```C++
+void UBaseAnimInstance::TurnInPlace_Rotating()
+{
+	bIsShouldTurnInPlace = false;
+
+	if (!IsValid(AsBaseController) || GroundGait != EGroundGait::Idle)
+	{
+		return;
+	}
+
+	FRotator TargetRotation = PrimaryRotation;
+
+	if (AsBaseController->bShouldAim)
+	{
+		if (const APlayerController* PlayerController =
+			Cast<APlayerController>(AsBaseController->GetController()))
+		{
+			FVector ViewLocation;
+			PlayerController->GetPlayerViewPoint(ViewLocation, TargetRotation);
+		}
+		else
+		{
+			TargetRotation = AsBaseController->GetControlRotation();
+		}
+
+		TargetRotation.Pitch = 0.0f;
+		TargetRotation.Roll = 0.0f;
+	}
+
+	TurnInPlaceAngle = UKismetMathLibrary::NormalizedDeltaRotator(
+		TargetRotation,
+		AsBaseController->GetActorRotation()).Yaw;
+
+	bIsShouldTurnInPlace = FMath::Abs(TurnInPlaceAngle) > 60.0;
+}
+```
+
+状态机
+
+![1789118444196](https://img2024.cnblogs.com/blog/3614909/202609/3614909-20260911173944345-189360507.png)
+
+效果：
+
+![1789119574031](https://img2024.cnblogs.com/blog/3614909/202609/3614909-20260911173945823-585949002.gif)
+
+# Part15 键盘输入时转身Start对步态切换的限制
+
+> 转身Start的时候切换步态的动作衔接问题：
+> ![1789120558432](https://img2024.cnblogs.com/blog/3614909/202609/3614909-20260911190041282-1396493872.gif)
+
+在Skeleton中添加曲线DisableSwitchGroundGait，只有当DisableSwitchGroundGait==0的时候才能够切换步态
+
+![1789123838351](https://img2024.cnblogs.com/blog/3614909/202609/3614909-20260911190043319-1860520479.png)
+
+因为是StartState出现的步态切换动作衔接问题
+
+因此在StartState中添加ModifyCurve节点，并且用转身起步动画资产中的RotateAlpha曲线来赋值DisableSwitchGroundGait曲线：
+
+RotateAlpha有值的时候禁止切换步态，即DisableSwitchGroundGait=1
+
+![1789123963256](https://img2024.cnblogs.com/blog/3614909/202609/3614909-20260911190043573-1067139253.png)
+
+InputGraph.GaitAction：只有DisableSwitchGroundGait==0的时候才能切换步态
+
+![1789124007972](https://img2024.cnblogs.com/blog/3614909/202609/3614909-20260911190043945-2048742590.png)
+
+## 效果
+
+![1789124866728](https://img2024.cnblogs.com/blog/3614909/202609/3614909-20260911190755199-1403727540.gif)
+
+## 解决键盘切换步态为Walk时手柄无法自动切回Run
+
+InputGraph.AnyKey：手柄输入时设置GroundGait为Run
+
+![1789124821663](https://img2024.cnblogs.com/blog/3614909/202609/3614909-20260911190712928-1752887735.png)
+
+或者在IMC_Default.IA_Walk中添加手柄切换步态的按键
+
+Part16
 
 # Part999_1 根据当前抬起的脚选择Start和Stop动画
 
