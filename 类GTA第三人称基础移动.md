@@ -1,4 +1,10 @@
 ```
+	//Rotating模式下判断是否需要原地转身
+	UFUNCTION(BlueprintCallable, Category = "CharacterRotation", meta = (HideSelfPin = "true"))
+	void TurnInPlace_Rotating();
+```
+
+```
 	//当前为手柄输入
 	UPROPERTY(BlueprintReadWrite, Category = "Input")
 	bool bIsGamepadInput = false;
@@ -856,7 +862,7 @@ Start State的序列播放器PlayRate绑定AnimPlaySpeed参数传入，并且设
 # Part10 解决Walk转身起步时肩膀卡顿问题
 
 > 复现条件：Walk转身起步时突然摇杆往同一侧推到底
-> ![1788856059593](image/类GTA第三人称基础移动/1788856059593.gif)
+> ![1788856059593](https://img2024.cnblogs.com/blog/3614909/202609/3614909-20260909193553622-2044749958.gif)
 
 ## 角色蓝图
 
@@ -870,7 +876,7 @@ Start State的序列播放器PlayRate绑定AnimPlaySpeed参数传入，并且设
 
 InputGraph.AnyKey
 
-![1788858563173](image/类GTA第三人称基础移动/1788858563173.png)
+![1788858563173](https://img2024.cnblogs.com/blog/3614909/202609/3614909-20260909193554299-677948223.png)
 
 ```C++
 	//当前为手柄输入
@@ -891,13 +897,13 @@ void UBaseAnimInstance::UpdateEssentialData()
 
 如果是手柄输入，只用90度的Start动画
 
-![1788861722064](image/类GTA第三人称基础移动/1788861722064.png)
+![1788861722064](https://img2024.cnblogs.com/blog/3614909/202609/3614909-20260909193554812-1307989077.png)
 
-![1788861749549](image/类GTA第三人称基础移动/1788861749549.png)
+![1788861749549](https://img2024.cnblogs.com/blog/3614909/202609/3614909-20260909193555094-1580546186.png)
 
 ## 效果
 
-![1788866650314](image/类GTA第三人称基础移动/1788866650314.gif)
+![1788866650314](https://img2024.cnblogs.com/blog/3614909/202609/3614909-20260909193556381-421295989.gif)
 
 ## 解决突然45度转向时的角色突然转向
 
@@ -905,58 +911,155 @@ void UBaseAnimInstance::UpdateEssentialData()
 
 在用到的前向Start动画序列中的rotatealpha加一小段
 
-![1788867712025](image/类GTA第三人称基础移动/1788867712025.png)
+![1788867712025](https://img2024.cnblogs.com/blog/3614909/202609/3614909-20260909193556990-744899144.png)
 
 ## 加上StrideWarping节点
 
 > 优化滑步
 
-![1788869441095](image/类GTA第三人称基础移动/1788869441095.png)
+![1788869441095](https://img2024.cnblogs.com/blog/3614909/202609/3614909-20260909193557271-41142523.png)
 
 勾上InterpResult可以消除起步时的warping导致的掰腿卡顿现象
 
-![1788870484179](image/类GTA第三人称基础移动/1788870484179.png)
+![1788870484179](https://img2024.cnblogs.com/blog/3614909/202609/3614909-20260909193557509-995018357.png)
 
 # Part11 Cycle和同步组的设置
 
 ### 对需要用到的Cycle Walk和Cycle Run 添加左右脚标记、MotionSpeed曲线修改器
 
- ![1788943550417](image/类GTA第三人称基础移动/1788943550417.png)![1788943559403](image/类GTA第三人称基础移动/1788943559403.png)
+ ![1788943550417](https://img2024.cnblogs.com/blog/3614909/202609/3614909-20260909193557752-597386816.png)![1788943559403](https://img2024.cnblogs.com/blog/3614909/202609/3614909-20260909193557986-840022692.png)
 
 > 添加左右脚标记详见：[动画序列添加左右脚标记、RotateAlpha曲线修改器](#动画序列添加左右脚标记rotatealpha曲线修改器)
 > MotionSpeed曲线修改器详见：[动画序列添加MotionSpeed曲线](#动画序列添加motionspeed曲线)
 
 ### CT_CycleState
 
-![1788943538739](image/类GTA第三人称基础移动/1788943538739.png)
+![1788943538739](https://img2024.cnblogs.com/blog/3614909/202609/3614909-20260909193558181-1800526485.png)
 
-![1788943585454](image/类GTA第三人称基础移动/1788943585454.png)
+![1788943585454](https://img2024.cnblogs.com/blog/3614909/202609/3614909-20260909193558378-1923376724.png)
 
-![1788943575618](image/类GTA第三人称基础移动/1788943575618.png)
+![1788943575618](https://img2024.cnblogs.com/blog/3614909/202609/3614909-20260909193558615-312852084.png)
 
 ## Cycle State
 
-![1788943969782](image/类GTA第三人称基础移动/1788943969782.png)
+Cycle->Idle的跳转条件优先级设置低一级，防止出现直接跳转为Idle
 
-![1788943983642](image/类GTA第三人称基础移动/1788943983642.png)
+![1789032177238](https://img2024.cnblogs.com/blog/3614909/202609/3614909-20260910210713442-357210804.png)
+
+![1788943969782](https://img2024.cnblogs.com/blog/3614909/202609/3614909-20260909193558815-1852986595.png)
+
+![1788943983642](https://img2024.cnblogs.com/blog/3614909/202609/3614909-20260909193559053-2080582572.png)
 
 ## 设置同步组
 
 #### Cycle
 
-![1788944051580](image/类GTA第三人称基础移动/1788944051580.png)
+![1788944051580](https://img2024.cnblogs.com/blog/3614909/202609/3614909-20260909193559278-1227846145.png)
 
 #### Start
 
-![1788944080340](image/类GTA第三人称基础移动/1788944080340.png)
+![1788944080340](https://img2024.cnblogs.com/blog/3614909/202609/3614909-20260909193559469-1415127680.png)
 
 Start->Cycle的过渡时间改为0.5s，确保同步组正确匹配
 
-![1788943657439](image/类GTA第三人称基础移动/1788943657439.png)
+![1789026814914](https://img2024.cnblogs.com/blog/3614909/202609/3614909-20260910155443649-167856186.png)
 
 ## 效果
 
-![1788948157586](image/类GTA第三人称基础移动/1788948157586.gif)
+![1788948157586](https://img2024.cnblogs.com/blog/3614909/202609/3614909-20260909193601729-1912950169.gif)
+
+# Part12 改善步态切换和回转运动效果
+
+> 待办
+
+# Part13 Rotating模式下的原地转身
+
+> TurnInPlace
+
+## 动画蓝图
+
+UpdateCharacterRotation.NoMovingRotation
+
+也就是不移动时的旋转逻辑中加入Rotating模式下的原地转身：
+
+![1789043140760](https://img2024.cnblogs.com/blog/3614909/202609/3614909-20260910210716414-95598758.png)
+
+```C++
+	//旋转模式下的原地转身
+	UPROPERTY(BlueprintReadWrite, Category = "CharacterState")
+	bool bIsShouldTurnInPlace = false;
+	//原地转身的角度
+	UPROPERTY(BlueprintReadWrite, Category = "CharacterRotation")
+	double TurnInPlaceAngle = 0.0;
+```
+
+```C++
+	//Rotating模式下判断是否需要原地转身
+	UFUNCTION(BlueprintCallable, Category = "CharacterRotation", meta = (HideSelfPin = "true"))
+	void TurnInPlace_Rotating();
+```
+
+```C++
+void UBaseAnimInstance::TurnInPlace_Rotating()
+{
+	bIsShouldTurnInPlace = false;
+	if (!IsValid(AsBaseController))
+	{
+		return;
+	}
+
+	//原地转身角度 = 目标朝向PrimaryRotation - 角色Rotation
+	TurnInPlaceAngle = UKismetMathLibrary::NormalizedDeltaRotator(
+		PrimaryRotation, AsBaseController->GetActorRotation()).Yaw;
+	if (FMath::Abs(TurnInPlaceAngle) > 60.0)
+	{
+		bIsShouldTurnInPlace = true;
+	}
+}
+```
+
+## TurnInPlace State
+
+![1789043585380](https://img2024.cnblogs.com/blog/3614909/202609/3614909-20260910210716671-85877128.png)
+
+> ***紫色：WantToTurnInPlace***![img](https://img2024.cnblogs.com/blog/3614909/202609/3614909-20260910210717227-262399486.png)
+
+> ***把原先的Cycle->Start的跳转条件WantToStop改为连到Cycle->Stop，否则这里会出现bug：***
+> 当角色进入CycleState，这时候松开移动输入键会进入StartState，而StartState相关联的AnimSetup_Start函数会更新PrimaryRotation，导致TurnInPlaceAngle = PrimaryRotation-Actor.Rotation > 60，触发ShouldTurnInPlace==true而进入TurnInPlaceState
+
+## CT_TurnInPlaceState
+
+![1789044625015](https://img2024.cnblogs.com/blog/3614909/202609/3614909-20260910210717443-1737518646.png)
+
+# Part14 解决TurnInPlaceState播放动画RootMotion不起作用
+
+原因：动画蓝图的默认设置中RootMotion是仅蒙太奇启用
+
+![1789031623684](https://img2024.cnblogs.com/blog/3614909/202609/3614909-20260910210717770-460377420.png)
+
+因此需要让原地转身动画在旋转期间回调动画通知对RootMotion进行设置：
+
+Begin——设置RootMotion From Everything
+
+![1789044913067](https://img2024.cnblogs.com/blog/3614909/202609/3614909-20260910210718047-1274499471.png)
+
+End——恢复为RootMotion From Montages Only
+
+![1789044919400](https://img2024.cnblogs.com/blog/3614909/202609/3614909-20260910210718302-1427823932.png)
+
+Tick——如果有输入，就立刻恢复为RootMotion From Montages Only，从而打断原地转身动画
+
+![1789044923580](https://img2024.cnblogs.com/blog/3614909/202609/3614909-20260910210718541-309706914.png)
+
+在原地转身动画资产中添加该AnimNotifyState(最好是在root的z轴旋转不再变化时结束)：
+
+![1789045157828](https://img2024.cnblogs.com/blog/3614909/202609/3614909-20260910210718917-249635152.png)
+
+## 效果
+
+![1789045568124](https://img2024.cnblogs.com/blog/3614909/202609/3614909-20260910210720553-1822242738.gif)
+
+# Part15 键盘输入时对步态切换的限制
 
 # Part999_1 根据当前抬起的脚选择Start和Stop动画
 

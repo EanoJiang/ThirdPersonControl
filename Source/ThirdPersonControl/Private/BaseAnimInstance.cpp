@@ -342,3 +342,55 @@ void UBaseAnimInstance::UpdateCurrentStateName(FName StateName)
 		CurrentStateName = StateName;
 	}
 }
+
+// void UBaseAnimInstance::TurnInPlace_Rotating()
+// {
+// 	bIsShouldTurnInPlace = false;
+// 	if (!IsValid(AsBaseController))
+// 	{
+// 		return;
+// 	}
+//
+// 	//原地转身角度 = 目标朝向PrimaryRotation - 角色Rotation
+// 	TurnInPlaceAngle = UKismetMathLibrary::NormalizedDeltaRotator(
+// 		PrimaryRotation, AsBaseController->GetActorRotation()).Yaw;
+// 	if (FMath::Abs(TurnInPlaceAngle) > 60.0)
+// 	{
+// 		bIsShouldTurnInPlace = true;
+// 	}
+// }
+
+void UBaseAnimInstance::TurnInPlace_Rotating()
+{
+	bIsShouldTurnInPlace = false;
+
+	if (!IsValid(AsBaseController) || GroundGait != EGroundGait::Idle)
+	{
+		return;
+	}
+
+	FRotator TargetRotation = PrimaryRotation;
+
+	if (AsBaseController->bShouldAim)
+	{
+		if (const APlayerController* PlayerController =
+			Cast<APlayerController>(AsBaseController->GetController()))
+		{
+			FVector ViewLocation;
+			PlayerController->GetPlayerViewPoint(ViewLocation, TargetRotation);
+		}
+		else
+		{
+			TargetRotation = AsBaseController->GetControlRotation();
+		}
+
+		TargetRotation.Pitch = 0.0f;
+		TargetRotation.Roll = 0.0f;
+	}
+
+	TurnInPlaceAngle = UKismetMathLibrary::NormalizedDeltaRotator(
+		TargetRotation,
+		AsBaseController->GetActorRotation()).Yaw;
+
+	bIsShouldTurnInPlace = FMath::Abs(TurnInPlaceAngle) > 60.0;
+}

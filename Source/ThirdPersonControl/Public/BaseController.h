@@ -41,6 +41,9 @@ public:
 	UPROPERTY(BlueprintReadWrite, Category = "Input")
 	bool bIsGamepadInput = false;
 	
+	UPROPERTY(BlueprintReadWrite, Category = "Input")
+	bool bShouldAim = false;
+	
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;

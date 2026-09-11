@@ -23,6 +23,7 @@ class THIRDPERSONCONTROL_API UBaseAnimInstance : public UAnimInstance
 	GENERATED_BODY()
 
 public:
+#pragma region Variables
 	UPROPERTY(BlueprintReadWrite, Category = "Reference")
 	ABaseController* AsBaseController = nullptr;
 	UPROPERTY(BlueprintReadWrite, Category = "Reference")
@@ -77,6 +78,17 @@ public:
 	UPROPERTY(BlueprintReadWrite, Category = "CharacterState")
 	FName CurrentStateName = FName("Idle");
 
+	//旋转模式下的原地转身
+	UPROPERTY(BlueprintReadWrite, Category = "CharacterState")
+	bool bIsShouldTurnInPlace = false;
+	//原地转身的角度
+	UPROPERTY(BlueprintReadWrite, Category = "CharacterRotation")
+	double TurnInPlaceAngle = 0.0;
+
+#pragma endregion Variables
+
+#pragma region Methods
+
 	//计算动画蓝图需要的参数
 	UFUNCTION(BlueprintCallable, Category = "UpdateData")
 	void UpdateEssentialData();
@@ -104,6 +116,10 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "CharacterRotation", meta = (HideSelfPin = "true"))
 	void SmoothControlRotation(float TargetInterpSpeed, float ActorInterpSpeed);
 
+	//Rotating模式下判断是否需要原地转身
+	UFUNCTION(BlueprintCallable, Category = "CharacterRotation", meta = (HideSelfPin = "true"))
+	void TurnInPlace_Rotating();
+
 
 	//记录当前状态名
 	void UpdateCurrentStateName(FName StateName);
@@ -126,10 +142,18 @@ public:
 	void OnStateEntry_Stop(const FAnimUpdateContext& Context,const FAnimNodeReference& Node)
 	{
 		UpdateCurrentStateName(FName("Stop"));
+	}	
+	UFUNCTION(BlueprintCallable, Category = "Animation|State", meta = (BlueprintThreadSafe))
+	void OnStateEntry_TurnInPlace(const FAnimUpdateContext& Context,const FAnimNodeReference& Node)
+	{
+		UpdateCurrentStateName(FName("TurnInPlace"));
 	}
+
+#pragma endregion Methods
 
 #pragma region DrawDebugMessages
 public:
+#pragma region Methods
 	virtual void NativeUninitializeAnimation() override;
 	virtual void BeginDestroy() override;
 
@@ -142,7 +166,10 @@ public:
 		FLinearColor ValueColor = FLinearColor::Red,
 		FVector LocationOffset = FVector(0, -200, 100));
 
+#pragma endregion Methods
+
 private:
+#pragma region Variables
 	struct FDebugKeyValueMessage
 	{
 		FString KeyText;
@@ -155,7 +182,12 @@ private:
 	TArray<FDebugKeyValueMessage> DebugKeyValueMessages;
 	uint64 DebugKeyValueFrame = MAX_uint64;
 	FDelegateHandle DebugKeyValueDrawHandle;
+
+#pragma endregion Variables
+
+#pragma region Methods
 	void DrawDebugKeyValueMessages(UCanvas* Canvas, APlayerController* PlayerController);
 	void ClearDebugKeyValueMessages();
+#pragma endregion Methods
 #pragma endregion DrawDebugMessages
 };
