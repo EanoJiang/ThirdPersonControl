@@ -452,6 +452,8 @@ void UBaseAnimInstance::UpdateLeftFootUp()
 
 ![1788493445480](https://img2024.cnblogs.com/blog/3614909/202609/3614909-20260904171702412-1584749210.png)
 
+根据不同速度决定Stop动画的起始播放时间，而不是依赖同步组(参考Lyra，Stop和Locomotion并不是同一个同步组)
+
 ```C++
 	//根据 GroundSpeed 计算Stop动画起始播放时间
 	UFUNCTION(BlueprintPure, Category = "Animation", meta = (BlueprintThreadSafe, HideSelfPin = "true"))
@@ -944,7 +946,7 @@ void UBaseAnimInstance::UpdateEssentialData()
 
 Cycle->Idle的跳转条件优先级设置低一级，防止出现直接跳转为Idle
 
-![1789032177238](https://img2024.cnblogs.com/blog/3614909/202609/3614909-20260910210713442-357210804.png)
+![1789373150919](https://img2024.cnblogs.com/blog/3614909/202609/3614909-20260914211913305-270763410.png)
 
 ![1788943969782](https://img2024.cnblogs.com/blog/3614909/202609/3614909-20260909193558815-1852986595.png)
 
@@ -962,7 +964,7 @@ Cycle->Idle的跳转条件优先级设置低一级，防止出现直接跳转为
 
 Start->Cycle的过渡时间改为0.5s，确保同步组正确匹配
 
-![1789026814914](https://img2024.cnblogs.com/blog/3614909/202609/3614909-20260910155443649-167856186.png)
+![1789373079029](https://img2024.cnblogs.com/blog/3614909/202609/3614909-20260914211913567-1663219581.png)
 
 ## 效果
 
@@ -1020,7 +1022,7 @@ void UBaseAnimInstance::TurnInPlace_Rotating()
 
 ## TurnInPlace State
 
-![1789043585380](https://img2024.cnblogs.com/blog/3614909/202609/3614909-20260910210716671-85877128.png)
+![1789373026727](https://img2024.cnblogs.com/blog/3614909/202609/3614909-20260914211913835-1278417216.png)
 
 > ***紫色：WantToTurnInPlace***![img](https://img2024.cnblogs.com/blog/3614909/202609/3614909-20260910210717227-262399486.png)
 
@@ -1113,7 +1115,7 @@ void UBaseAnimInstance::TurnInPlace_Rotating()
 
 状态机
 
-![1789118444196](https://img2024.cnblogs.com/blog/3614909/202609/3614909-20260911173944345-189360507.png)
+![1789373003887](https://img2024.cnblogs.com/blog/3614909/202609/3614909-20260914211914287-1481189949.png)
 
 效果：
 
@@ -1124,9 +1126,13 @@ void UBaseAnimInstance::TurnInPlace_Rotating()
 > 转身Start的时候切换步态的动作衔接问题：
 > ![1789120558432](https://img2024.cnblogs.com/blog/3614909/202609/3614909-20260911190041282-1396493872.gif)
 
+## Skeleton中添加DisableSwitchGroundGait曲线
+
 在Skeleton中添加曲线DisableSwitchGroundGait，只有当DisableSwitchGroundGait==0的时候才能够切换步态
 
 ![1789123838351](https://img2024.cnblogs.com/blog/3614909/202609/3614909-20260911190043319-1860520479.png)
+
+## 利用RotateAlpha曲线来赋值DisableSwitchGroundGait曲线
 
 因为是StartState出现的步态切换动作衔接问题
 
@@ -1152,8 +1158,113 @@ InputGraph.AnyKey：手柄输入时设置GroundGait为Run
 
 或者在IMC_Default.IA_Walk中添加手柄切换步态的按键
 
-Part16
+# Part16 CycleState的步态过渡动画——垫步
+
+## 对步态过渡动画添加左右脚标记、MotionSpeed曲线
+
+![1789356046269](https://img2024.cnblogs.com/blog/3614909/202609/3614909-20260914211914517-1597806580.png)![1789356195455](https://img2024.cnblogs.com/blog/3614909/202609/3614909-20260914211914755-119931360.png)
+
+> 添加左右脚标记详见：[动画序列添加左右脚标记、RotateAlpha曲线修改器](#动画序列添加左右脚标记rotatealpha曲线修改器)
+> MotionSpeed曲线修改器详见：[动画序列添加MotionSpeed曲线](#动画序列添加motionspeed曲线)
+
+## CT_GaitTransition
+
+![1789356442569](https://img2024.cnblogs.com/blog/3614909/202609/3614909-20260914211914998-927084533.png)
+
+## Cycle动画状态机重构
+
+### CycleStateWithGaitTransition
+
+![1789379868757](https://img2024.cnblogs.com/blog/3614909/202609/3614909-20260914211915235-2051747176.png)
+
+![1789380458465](https://img2024.cnblogs.com/blog/3614909/202609/3614909-20260914211915462-1329946866.png)
+
+跳转条件：
+
+![](https://img2024.cnblogs.com/blog/3614909/202609/3614909-20260914211916464-380310387.png)
+
+![](https://img2024.cnblogs.com/blog/3614909/202609/3614909-20260914211916823-361224968.png)
+
+![](https://img2024.cnblogs.com/blog/3614909/202609/3614909-20260914211917115-62517200.png)
+
+#### Cycle_Walk和Cycle_Run
+
+![1789380379935](https://img2024.cnblogs.com/blog/3614909/202609/3614909-20260914211917530-103307838.png)
+
+#### Cycle_WalkToRun和Cycle_RunToWalk
+
+![1789380555569](https://img2024.cnblogs.com/blog/3614909/202609/3614909-20260914211917756-1313307296.png)
+
+![1789380536097](https://img2024.cnblogs.com/blog/3614909/202609/3614909-20260914211917995-1089133558.png)
+
+### 设置SequencePlayer的起始播放时间
+
+> 步态过渡动画的前后帧片段较长，因此需要根据MotionSpeed曲线值的变化，设置他们State的SequencePlayer的起始播放时间
+
+Cycle_WalkToRun
+
+![1789376247245](https://img2024.cnblogs.com/blog/3614909/202609/3614909-20260914211918214-679646537.png)
+
+![1789380652796](https://img2024.cnblogs.com/blog/3614909/202609/3614909-20260914211918447-1387370886.png)
+
+Cycle_RunToWalk
+
+![1789375789131](https://img2024.cnblogs.com/blog/3614909/202609/3614909-20260914211918689-497857012.png)
+
+![1789380659778](https://img2024.cnblogs.com/blog/3614909/202609/3614909-20260914211918918-1811578440.png)
+
+## 删去步态过渡动画的后续冗余帧片段
+
+> 不能删去前序动画帧，因为状态之间的crossfade需要前序动画帧才能比较完美地融合
+
+同样地，可以参考motionspeed曲线，也就是删去motionspeed已经稳定的帧片段
+
+![1789386962677](https://img2024.cnblogs.com/blog/3614909/202609/3614909-20260914211919173-1706924754.png)
+
+## 设置同步组
+
+删去SequencePlayer起始播放时间前面的左右脚标记点，可以根据实际表现保留最近的那一个标记
+
+(并注意这个时间点是哪只脚抬起而决定是否要在选择器表CT_CycleGaitTransition中修改资产的条件)
+
+![1789387534151](https://img2024.cnblogs.com/blog/3614909/202609/3614909-20260914211919405-202991207.png)
+
+将WalkToRun和RunToWalk的SequencePlayer的同步组都设置为Transition Leader
+
+![1789370730920](https://img2024.cnblogs.com/blog/3614909/202609/3614909-20260914211919627-185394164.png)
+
+## 限制步态切换时机
+
+> 骨骼添加DisableSwitchGroundGait曲线详见：[Skeleton添加DisableSwitchGroundGait曲线](#skeleton添加disableswitchgroundgait曲线)
+
+根据MotionSpeed曲线手动设置DisableSwitchGroundGait曲线(稍微比MotionSpeed曲线滞后一点)
+
+WalkToRun
+
+![1789377810536](https://img2024.cnblogs.com/blog/3614909/202609/3614909-20260914211919856-158316884.png)
+
+RunToWalk
+
+![1789377826646](https://img2024.cnblogs.com/blog/3614909/202609/3614909-20260914211920075-1421809475.png)
+
+加一个跳转条件保证：**只有不在禁止步态切换期间动画**、**且步态还没切换到目标步态** 才会切过去，并且该条件的优先级需要低一档
+
+![img](https://img2024.cnblogs.com/blog/3614909/202609/3614909-20260914211920501-1963646741.png)
+
+## 效果
+
+![1789392023671](https://img2024.cnblogs.com/blog/3614909/202609/3614909-20260914212027639-1339322873.gif)
+
+## Part17 取消手柄操作时的步态切换过渡
+
+
 
 # Part999_1 根据当前抬起的脚选择Start和Stop动画
 
 # Part999_2 移动时的身体倾斜
+
+# Part999_3 不同方向起步的时机限制
+
+![1789380171128](https://img2024.cnblogs.com/blog/3614909/202609/3614909-20260914211923701-2876125.gif)
+
+![1789380167630](https://img2024.cnblogs.com/blog/3614909/202609/3614909-20260914211924463-1256544558.gif)

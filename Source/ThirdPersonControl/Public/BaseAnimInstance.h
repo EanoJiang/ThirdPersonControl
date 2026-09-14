@@ -120,8 +120,7 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "CharacterRotation", meta = (HideSelfPin = "true"))
 	void TurnInPlace_Rotating();
 
-
-	//记录当前状态名
+#pragma region 记录当前状态名
 	void UpdateCurrentStateName(FName StateName);
 	UFUNCTION(BlueprintCallable, Category = "Animation|State", meta = (BlueprintThreadSafe))
 	void OnStateEntry_Idle(const FAnimUpdateContext& Context,const FAnimNodeReference& Node)
@@ -133,11 +132,28 @@ public:
 	{
 		UpdateCurrentStateName(FName("Start"));
 	}
+	
 	UFUNCTION(BlueprintCallable, Category = "Animation|State", meta = (BlueprintThreadSafe))
-	void OnStateEntry_Cycle(const FAnimUpdateContext& Context,const FAnimNodeReference& Node)
+	void OnStateEntry_Cycle_Gait_Walk(const FAnimUpdateContext& Context,const FAnimNodeReference& Node)
 	{
-		UpdateCurrentStateName(FName("Cycle"));
+		UpdateCurrentStateName(FName("Cycle_Gait_Walk"));
 	}
+	UFUNCTION(BlueprintCallable, Category = "Animation|State", meta = (BlueprintThreadSafe))
+	void OnStateEntry_Cycle_Gait_Run(const FAnimUpdateContext& Context,const FAnimNodeReference& Node)
+	{
+		UpdateCurrentStateName(FName("Cycle_Gait_Run"));
+	}
+	UFUNCTION(BlueprintCallable, Category = "Animation|State", meta = (BlueprintThreadSafe))
+	void OnStateEntry_Cycle_GaitTransition_WalkToRun(const FAnimUpdateContext& Context,const FAnimNodeReference& Node)
+	{
+		UpdateCurrentStateName(FName("Cycle_GaitTransition_WalkToRun"));
+	}
+	UFUNCTION(BlueprintCallable, Category = "Animation|State", meta = (BlueprintThreadSafe))
+	void OnStateEntry_Cycle_GaitTransition_RunToWalk(const FAnimUpdateContext& Context,const FAnimNodeReference& Node)
+	{
+		UpdateCurrentStateName(FName("Cycle_GaitTransition_RunToWalk"));
+	}
+	
 	UFUNCTION(BlueprintCallable, Category = "Animation|State", meta = (BlueprintThreadSafe))
 	void OnStateEntry_Stop(const FAnimUpdateContext& Context,const FAnimNodeReference& Node)
 	{
@@ -148,8 +164,10 @@ public:
 	{
 		UpdateCurrentStateName(FName("TurnInPlace"));
 	}
+	
+#pragma endregion
 
-#pragma endregion Methods
+#pragma endregion
 
 #pragma region DrawDebugMessages
 public:
@@ -189,5 +207,5 @@ private:
 	void DrawDebugKeyValueMessages(UCanvas* Canvas, APlayerController* PlayerController);
 	void ClearDebugKeyValueMessages();
 #pragma endregion Methods
-#pragma endregion DrawDebugMessages
+#pragma endregion
 };

@@ -19,7 +19,7 @@ void ABaseController::InitialGaitSettings()
 
 	FSGaitSettings RunSettings;
 	RunSettings.MaxWalkSpeed = 375.0f;
-	RunSettings.MaxAcceleration = 800.0f;
+	RunSettings.MaxAcceleration = 500.0f;
 	RunSettings.BrakingDeceleration = 1200.0f;
 	RunSettings.BrakingFrictionFactor = 1.0f;
 	RunSettings.bUseSeparateBrakingFriction = true;
