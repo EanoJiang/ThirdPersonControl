@@ -13,6 +13,7 @@ class ABaseController;
 class UCharacterMovementComponent;
 class UCanvas;
 class APlayerController;
+class UChooserTable;
 
 /**
  * 
@@ -23,6 +24,8 @@ class THIRDPERSONCONTROL_API UBaseAnimInstance : public UAnimInstance
 	GENERATED_BODY()
 
 public:
+	UBaseAnimInstance();
+
 #pragma region Variables
 	UPROPERTY(BlueprintReadWrite, Category = "Reference")
 	ABaseController* AsBaseController = nullptr;
@@ -78,12 +81,27 @@ public:
 	UPROPERTY(BlueprintReadWrite, Category = "CharacterState")
 	FName CurrentStateName = FName("Idle");
 
-	//旋转模式下的原地转身
-	UPROPERTY(BlueprintReadWrite, Category = "CharacterState")
-	bool bIsShouldTurnInPlace = false;
-	//原地转身的角度
-	UPROPERTY(BlueprintReadWrite, Category = "CharacterRotation")
-	double TurnInPlaceAngle = 0.0;
+	//旋转模式下，是否原地转身
+	UPROPERTY(BlueprintReadWrite, Category = "TurnInPlace")
+	bool bShouldTurnInPlace_Rotating = false;
+	//旋转模式下的原地转身角度
+	UPROPERTY(BlueprintReadWrite, Category = "TurnInPlace")
+	float TurnInPlaceAngle_Rotating = 0.0;
+
+	//扫射模式下，是否原地转身
+	UPROPERTY(BlueprintReadWrite, Category = "TurnInPlace")
+	bool bShouldTurnInPlace_Strafing = false;
+	//扫射模式下下的原地转身角度
+	UPROPERTY(BlueprintReadWrite, Category = "TurnInPlace")
+	float TurnInPlaceAngle_Strafing = 0.0;
+
+	//限制TurnInPlace的播放速度
+	UPROPERTY(BlueprintReadWrite, Category = "TurnInPlace")
+	float ScaledPlayRate = 1.0f;
+	//限制TurnInPlace的旋转修正倍率
+	UPROPERTY(BlueprintReadWrite, Category = "TurnInPlace")
+	float TurnInPlaceAngleModifier;
+
 
 #pragma endregion Variables
 
@@ -119,6 +137,10 @@ public:
 	//Rotating模式下判断是否需要原地转身
 	UFUNCTION(BlueprintCallable, Category = "CharacterRotation", meta = (HideSelfPin = "true"))
 	void TurnInPlace_Rotating();
+
+	//Strafing 模式下播放原地转身动画并应用旋转曲线
+	UFUNCTION(BlueprintCallable, Category = "CharacterRotation", meta = (HideSelfPin = "true"))
+	void TurnInPlace_Strafing(TSoftObjectPtr<UChooserTable> CT_TurnInPlace_Strafing);
 
 #pragma region 记录当前状态名
 	void UpdateCurrentStateName(FName StateName);
@@ -160,9 +182,14 @@ public:
 		UpdateCurrentStateName(FName("Stop"));
 	}	
 	UFUNCTION(BlueprintCallable, Category = "Animation|State", meta = (BlueprintThreadSafe))
-	void OnStateEntry_TurnInPlace(const FAnimUpdateContext& Context,const FAnimNodeReference& Node)
+	void OnStateEntry_TurnInPlace_Rotating(const FAnimUpdateContext& Context,const FAnimNodeReference& Node)
 	{
-		UpdateCurrentStateName(FName("TurnInPlace"));
+		UpdateCurrentStateName(FName("TurnInPlace_Rotating"));
+	}
+	UFUNCTION(BlueprintCallable, Category = "Animation|State", meta = (BlueprintThreadSafe))
+	void OnStateEntry_TurnInPlace_Strafing(const FAnimUpdateContext& Context,const FAnimNodeReference& Node)
+	{
+		UpdateCurrentStateName(FName("TurnInPlace_Strafing"));
 	}
 	
 #pragma endregion

@@ -8,11 +8,11 @@
 void ABaseController::InitialGaitSettings()
 {
 	FSGaitSettings WalkSettings;
-	WalkSettings.MaxWalkSpeed = 175.0f;
-	WalkSettings.MaxAcceleration = 350.0f;
-	WalkSettings.BrakingDeceleration = 500.0f;
-	WalkSettings.BrakingFrictionFactor = 1.0f;
-	WalkSettings.bUseSeparateBrakingFriction = true;
+	WalkSettings.MaxWalkSpeed = 165.0f;
+	WalkSettings.MaxAcceleration = 500.0f;
+	WalkSettings.BrakingDeceleration = 1500.0f;
+	WalkSettings.BrakingFrictionFactor = 0.0f;
+	WalkSettings.bUseSeparateBrakingFriction = false;
 	WalkSettings.BrakingFriction = 0.0f;
 	WalkSettings.GroundFriction = 8.0f;
 	GaitSettings.Add(EGroundGait::Walk, WalkSettings);
@@ -20,9 +20,9 @@ void ABaseController::InitialGaitSettings()
 	FSGaitSettings RunSettings;
 	RunSettings.MaxWalkSpeed = 375.0f;
 	RunSettings.MaxAcceleration = 500.0f;
-	RunSettings.BrakingDeceleration = 1200.0f;
-	RunSettings.BrakingFrictionFactor = 1.0f;
-	RunSettings.bUseSeparateBrakingFriction = true;
+	RunSettings.BrakingDeceleration = 1500.0f;
+	RunSettings.BrakingFrictionFactor = 0.0f;
+	RunSettings.bUseSeparateBrakingFriction = false;
 	RunSettings.BrakingFriction = 0.0f;
 	RunSettings.GroundFriction = 8.0f;
 	GaitSettings.Add(EGroundGait::Run, RunSettings);

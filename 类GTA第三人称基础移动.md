@@ -1,5 +1,5 @@
 ```
-	//Rotating模式下判断是否需要原地转身
+	//Rotating模式下判断是否需原地转身
 	UFUNCTION(BlueprintCallable, Category = "CharacterRotation", meta = (HideSelfPin = "true"))
 	void TurnInPlace_Rotating();
 ```
@@ -990,7 +990,7 @@ UpdateCharacterRotation.NoMovingRotation
 	//旋转模式下的原地转身
 	UPROPERTY(BlueprintReadWrite, Category = "CharacterState")
 	bool bIsShouldTurnInPlace = false;
-	//原地转身的角度
+	/原地转身的角度
 	UPROPERTY(BlueprintReadWrite, Category = "CharacterRotation")
 	double TurnInPlaceAngle = 0.0;
 ```
@@ -1255,7 +1255,118 @@ RunToWalk
 
 ![1789392023671](https://img2024.cnblogs.com/blog/3614909/202609/3614909-20260914212027639-1339322873.gif)
 
-## Part17 取消手柄操作时的步态切换过渡
+# Part19 Strafing模式的原地转身
+
+![1789444311841](https://img2024.cnblogs.com/blog/3614909/202609/3614909-20260915212225602-1941106566.png)
+
+先全部取消rootmotion，添加TurnRotationAnimModifier修改器
+
+![1789444404041](https://img2024.cnblogs.com/blog/3614909/202609/3614909-20260915212226010-944742918.png)
+
+> TurnRotationAnimModifier修改器
+> ![1789454928667](https://img2024.cnblogs.com/blog/3614909/202609/3614909-20260915212226500-186299519.png)
+
+![1789455667005](https://img2024.cnblogs.com/blog/3614909/202609/3614909-20260915212226780-1114980545.png)
+
+> 为了和Rotating下的TurnInPlace区分，将之前的加上后缀_Rotating
+
+## CT_TurnInPlaceStrafing
+
+![1789476799316](https://img2024.cnblogs.com/blog/3614909/202609/3614909-20260915212227013-897545012.png)
+
+## 动画蓝图
+
+UpdateCharacterRotation.NoMovingRotation
+
+![1789476701509](https://img2024.cnblogs.com/blog/3614909/202609/3614909-20260915212227219-1693806688.png)
+
+```C++
+	//限制TurnInPlace的播放速度
+	UPROPERTY(BlueprintReadWrite, Category = "TurnInPlace")
+	float ScaledPlayRate = 1.0f;
+	//限制TurnInPlace的旋转修正倍率
+	UPROPERTY(BlueprintReadWrite, Category = "TurnInPlace")
+	float TurnInPlaceAngleModifier;
+```
+
+```C++
+void UBaseAnimInstance::TurnInPlace_Strafing(TSoftObjectPtr<UChooserTable> CT_TurnInPlace_Strafing)
+{
+	static const FName EnableTurnInPlaceCurveName(TEXT("EnableTurnInPlace"));
+	static const FName RotationAmountCurveName(TEXT("RotationAmount"));
+	static const FName SlotName(TEXT("TurnInPlace_Strafing"));
+
+	// Sequence Then 0: Chooser 同时更新 ScaledPlayRate，再使用该值播放蒙太奇。
+	if (GetCurveValue(EnableTurnInPlaceCurveName) == 1.0f && AsBaseController->bShouldAim)
+	{
+		TurnInPlaceAngle_Strafing = UKismetMathLibrary::NormalizedDeltaRotator(
+			AsBaseController->GetControlRotation(), AsBaseController->GetActorRotation()).Yaw;
+
+		if (FMath::Abs(TurnInPlaceAngle_Strafing) > 60.0f)
+		{
+			if (UChooserTable* ChooserTable = CT_TurnInPlace_Strafing.LoadSynchronous())
+			{
+				UAnimSequenceBase* Animation = Cast<UAnimSequenceBase>(
+					UChooserFunctionLibrary::EvaluateChooser(
+						this, 
+						ChooserTable, 
+						UAnimSequenceBase::StaticClass()));
+				if (IsValid(Animation) && !IsPlayingSlotAnimation(Animation, SlotName))
+				{
+					PlaySlotAnimationAsDynamicMontage(
+						Animation, 
+						SlotName,
+						0.2f, 
+						0.25f, 
+						ScaledPlayRate, 
+						1, 
+						0.0f, 
+						0.0f);
+
+					const float AnimationAngle = FMath::Sign(TurnInPlaceAngle_Strafing)
+						* ( (FMath::Abs(TurnInPlaceAngle_Strafing) < 130.0f ) ? 90.0f : 180.0f);
+					//	(实际旋转角度 / 动画的旋转角度) * 播放速率 = 旋转倍率 * 播放速率 = 修正后的旋转倍率
+					TurnInPlaceAngleModifier = (TurnInPlaceAngle_Strafing / AnimationAngle) * ScaledPlayRate;
+				}
+			}
+		}
+	}
+
+	// Sequence Then 1 读取RotationAmount曲线控制角色旋转
+	const float RotationAmount = GetCurveValue(RotationAmountCurveName);
+	if (FMath::Abs(RotationAmount) > 0.0f)
+	{
+		AsBaseController->AddActorWorldRotation(FRotator(
+			0.0f, 
+			RotationAmount * 45.0f * DeltaTimeX, 
+			0.0f));
+	}
+}
+```
+
+回到CT_TurnInPlaceStrafing，返回ScaledPlayRate用来控制蒙太奇的播放速率
+
+![1789477195896](https://img2024.cnblogs.com/blog/3614909/202609/3614909-20260915212227448-863747747.png)
+
+## 状态机
+
+IdleState
+
+* 让EnableTurnInPlace=1，也就是只有在Idle状态才会触发Strafing模式的原地转身
+* 添加专属Slot
+* 限制TurnInPlace的旋转修正倍率TurnInPlaceAngleModifier赋值给控制角色旋转的参数RotationAmount
+
+![1789477128765](https://img2024.cnblogs.com/blog/3614909/202609/3614909-20260915212227680-1382639356.png)
+
+## 效果
+
+> 均能正确转向
+
+![1789478504755](https://img2024.cnblogs.com/blog/3614909/202609/3614909-20260915212229706-1497265334.gif)
+
+这里其实可以把前面Rotation模式下的原地转身的aim情形删去，因为aim只需要在战斗中触发，而战斗中一般是自动切到Strafing模式
+
+# Part20 适配不同帧率的原地转身
 
 
 

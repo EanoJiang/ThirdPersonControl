@@ -3,6 +3,9 @@
 
 #include "BaseAnimInstance.h"
 #include "BaseController.h"
+#include "Animation/AnimSequenceBase.h"
+#include "Chooser.h"
+#include "ChooserFunctionLibrary.h"
 #include "CanvasItem.h"
 #include "Debug/DebugDrawService.h"
 #include "Engine/Canvas.h"
@@ -14,6 +17,8 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/Pawn.h"
 #include "Kismet/KismetMathLibrary.h"
+
+UBaseAnimInstance::UBaseAnimInstance() = default;
 
 #pragma region DrawDebugMessages
 
@@ -175,7 +180,7 @@ void UBaseAnimInstance::UpdateEssentialData()
 		GroundSpeed,
 		GetCurveValue(SpeedCurveName));
 	AnimPlaySpeed = static_cast<float>(
-		FMath::Clamp(SpeedRatio, 0.8, 1.0)
+		FMath::Clamp(SpeedRatio, 0.8, 1.1)
 		);
 }
 
@@ -204,7 +209,7 @@ void UBaseAnimInstance::UpdateGroundGait()
 	const bool bCanRun =
 		bIsMoving
 		&& MovementComponent->GetMaxSpeed() > 250.0f
-		&& MovementComponent->GetAnalogInputModifier() > 0.6f;
+		&& MovementComponent->GetAnalogInputModifier() > 0.55f;
 
 	if (bCanRun)
 	{
@@ -343,42 +348,75 @@ void UBaseAnimInstance::UpdateCurrentStateName(FName StateName)
 	}
 }
 
-// void UBaseAnimInstance::TurnInPlace_Rotating()
-// {
-// 	bIsShouldTurnInPlace = false;
-// 	if (!IsValid(AsBaseController))
-// 	{
-// 		return;
-// 	}
-//
-// 	//原地转身角度 = 目标朝向PrimaryRotation - 角色Rotation
-// 	TurnInPlaceAngle = UKismetMathLibrary::NormalizedDeltaRotator(
-// 		PrimaryRotation, AsBaseController->GetActorRotation()).Yaw;
-// 	if (FMath::Abs(TurnInPlaceAngle) > 60.0)
-// 	{
-// 		bIsShouldTurnInPlace = true;
-// 	}
-// }
-
 void UBaseAnimInstance::TurnInPlace_Rotating()
 {
-	bIsShouldTurnInPlace = false;
+	bShouldTurnInPlace_Rotating = false;
 
 	if (!IsValid(AsBaseController) || GroundGait != EGroundGait::Idle)
 	{
 		return;
 	}
 
-	FRotator TargetRotation = PrimaryRotation;
+	FRotator TargetRotation = (AsBaseController->bShouldAim) ? AsBaseController->GetControlRotation() : PrimaryRotation;
 
-	if (AsBaseController->bShouldAim)
+
+	TurnInPlaceAngle_Rotating = UKismetMathLibrary::NormalizedDeltaRotator(
+		TargetRotation,
+		AsBaseController->GetActorRotation()
+		).Yaw;
+
+	bShouldTurnInPlace_Rotating = FMath::Abs(TurnInPlaceAngle_Rotating) > 60.0;
+}
+
+void UBaseAnimInstance::TurnInPlace_Strafing(TSoftObjectPtr<UChooserTable> CT_TurnInPlace_Strafing)
+{
+	static const FName EnableTurnInPlaceCurveName(TEXT("EnableTurnInPlace"));
+	static const FName RotationAmountCurveName(TEXT("RotationAmount"));
+	static const FName SlotName(TEXT("TurnInPlace_Strafing"));
+
+	// Sequence Then 0: Chooser 同时更新 ScaledPlayRate，再使用该值播放蒙太奇。
+	if (GetCurveValue(EnableTurnInPlaceCurveName) == 1.0f && AsBaseController->bShouldAim)
 	{
-		TargetRotation = AsBaseController->GetControlRotation();
+		TurnInPlaceAngle_Strafing = UKismetMathLibrary::NormalizedDeltaRotator(
+			AsBaseController->GetControlRotation(), AsBaseController->GetActorRotation()).Yaw;
+
+		if (FMath::Abs(TurnInPlaceAngle_Strafing) > 60.0f)
+		{
+			if (UChooserTable* ChooserTable = CT_TurnInPlace_Strafing.LoadSynchronous())
+			{
+				UAnimSequenceBase* Animation = Cast<UAnimSequenceBase>(
+					UChooserFunctionLibrary::EvaluateChooser(
+						this, 
+						ChooserTable, 
+						UAnimSequenceBase::StaticClass()));
+				if (IsValid(Animation) && !IsPlayingSlotAnimation(Animation, SlotName))
+				{
+					PlaySlotAnimationAsDynamicMontage(
+						Animation, 
+						SlotName,
+						0.2f, 
+						0.25f, 
+						ScaledPlayRate, 
+						1, 
+						0.0f, 
+						0.0f);
+
+					const float AnimationAngle = FMath::Sign(TurnInPlaceAngle_Strafing)
+						* ( (FMath::Abs(TurnInPlaceAngle_Strafing) < 130.0f ) ? 90.0f : 180.0f);
+					//	(实际旋转角度 / 动画的旋转角度) * 播放速率 = 旋转倍率 * 播放速率 = 修正后的旋转倍率
+					TurnInPlaceAngleModifier = (TurnInPlaceAngle_Strafing / AnimationAngle) * ScaledPlayRate;
+				}
+			}
+		}
 	}
 
-	TurnInPlaceAngle = UKismetMathLibrary::NormalizedDeltaRotator(
-		TargetRotation,
-		AsBaseController->GetActorRotation()).Yaw;
-
-	bIsShouldTurnInPlace = FMath::Abs(TurnInPlaceAngle) > 60.0;
+	// Sequence Then 1 独立执行，不受上面的动画触发条件影响。
+	const float RotationAmount = GetCurveValue(RotationAmountCurveName);
+	if (FMath::Abs(RotationAmount) > 0.0f)
+	{
+		AsBaseController->AddActorWorldRotation(FRotator(
+			0.0f, 
+			RotationAmount * 45.0f * DeltaTimeX, 
+			0.0f));
+	}
 }
