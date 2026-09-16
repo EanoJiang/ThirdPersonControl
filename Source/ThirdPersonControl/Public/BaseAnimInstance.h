@@ -79,7 +79,7 @@ public:
 	bool bIsGamepadInput = false;
 	
 	UPROPERTY(BlueprintReadWrite, Category = "CharacterState")
-	FName CurrentStateName = FName("Idle");
+	FName CurrentStateName = FName("None");
 
 	//旋转模式下，是否原地转身
 	UPROPERTY(BlueprintReadWrite, Category = "TurnInPlace")
@@ -87,20 +87,17 @@ public:
 	//旋转模式下的原地转身角度
 	UPROPERTY(BlueprintReadWrite, Category = "TurnInPlace")
 	float TurnInPlaceAngle_Rotating = 0.0;
-
-	//扫射模式下，是否原地转身
-	UPROPERTY(BlueprintReadWrite, Category = "TurnInPlace")
-	bool bShouldTurnInPlace_Strafing = false;
-	//扫射模式下下的原地转身角度
-	UPROPERTY(BlueprintReadWrite, Category = "TurnInPlace")
-	float TurnInPlaceAngle_Strafing = 0.0;
+	
+	//蒙太奇原地转身角度
+	UPROPERTY(BlueprintReadWrite, Category = "TurnInPlace_Montage")
+	float TurnInPlaceAngle_Montage = 0.0;
 
 	//限制TurnInPlace的播放速度
-	UPROPERTY(BlueprintReadWrite, Category = "TurnInPlace")
-	float ScaledPlayRate = 1.0f;
+	UPROPERTY(BlueprintReadWrite, Category = "TurnInPlace_Montage")
+	float ScaledPlayRate_Montage = 1.0f;
 	//限制TurnInPlace的旋转修正倍率
-	UPROPERTY(BlueprintReadWrite, Category = "TurnInPlace")
-	float TurnInPlaceAngleModifier;
+	UPROPERTY(BlueprintReadWrite, Category = "TurnInPlace_Montage")
+	float TurnInPlaceAngleModifier_Montage;
 
 
 #pragma endregion Variables
@@ -134,13 +131,14 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "CharacterRotation", meta = (HideSelfPin = "true"))
 	void SmoothControlRotation(float TargetInterpSpeed, float ActorInterpSpeed);
 
-	//Rotating模式下判断是否需要原地转身
+	//Rotating模式下,计算原地转身State需要的数据
 	UFUNCTION(BlueprintCallable, Category = "CharacterRotation", meta = (HideSelfPin = "true"))
-	void TurnInPlace_Rotating();
+	void UpdateStateData_TurnInPlace();
 
-	//Strafing 模式下播放原地转身动画并应用旋转曲线
+	//播放原地转身动画蒙太奇并应用旋转曲线控制实际角色转身角度
 	UFUNCTION(BlueprintCallable, Category = "CharacterRotation", meta = (HideSelfPin = "true"))
-	void TurnInPlace_Strafing(TSoftObjectPtr<UChooserTable> CT_TurnInPlace_Strafing);
+	void TurnInPlace_Montage(TSoftObjectPtr<UChooserTable> CT_TurnInPlace_Montage);
+
 
 #pragma region 记录当前状态名
 	void UpdateCurrentStateName(FName StateName);

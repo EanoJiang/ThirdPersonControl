@@ -348,7 +348,7 @@ void UBaseAnimInstance::UpdateCurrentStateName(FName StateName)
 	}
 }
 
-void UBaseAnimInstance::TurnInPlace_Rotating()
+void UBaseAnimInstance::UpdateStateData_TurnInPlace()
 {
 	bShouldTurnInPlace_Rotating = false;
 
@@ -368,21 +368,21 @@ void UBaseAnimInstance::TurnInPlace_Rotating()
 	bShouldTurnInPlace_Rotating = FMath::Abs(TurnInPlaceAngle_Rotating) > 60.0;
 }
 
-void UBaseAnimInstance::TurnInPlace_Strafing(TSoftObjectPtr<UChooserTable> CT_TurnInPlace_Strafing)
+void UBaseAnimInstance::TurnInPlace_Montage(TSoftObjectPtr<UChooserTable> CT_TurnInPlace_Montage)
 {
 	static const FName EnableTurnInPlaceCurveName(TEXT("EnableTurnInPlace"));
 	static const FName RotationAmountCurveName(TEXT("RotationAmount"));
-	static const FName SlotName(TEXT("TurnInPlace_Strafing"));
+	static const FName SlotName(TEXT("TurnInPlace_Montage"));
 
 	// Sequence Then 0: Chooser 同时更新 ScaledPlayRate，再使用该值播放蒙太奇。
 	if (GetCurveValue(EnableTurnInPlaceCurveName) == 1.0f && AsBaseController->bShouldAim)
 	{
-		TurnInPlaceAngle_Strafing = UKismetMathLibrary::NormalizedDeltaRotator(
+		TurnInPlaceAngle_Montage = UKismetMathLibrary::NormalizedDeltaRotator(
 			AsBaseController->GetControlRotation(), AsBaseController->GetActorRotation()).Yaw;
 
-		if (FMath::Abs(TurnInPlaceAngle_Strafing) > 60.0f)
+		if (FMath::Abs(TurnInPlaceAngle_Montage) > 60.0f)
 		{
-			if (UChooserTable* ChooserTable = CT_TurnInPlace_Strafing.LoadSynchronous())
+			if (UChooserTable* ChooserTable = CT_TurnInPlace_Montage.LoadSynchronous())
 			{
 				UAnimSequenceBase* Animation = Cast<UAnimSequenceBase>(
 					UChooserFunctionLibrary::EvaluateChooser(
@@ -396,15 +396,15 @@ void UBaseAnimInstance::TurnInPlace_Strafing(TSoftObjectPtr<UChooserTable> CT_Tu
 						SlotName,
 						0.2f, 
 						0.25f, 
-						ScaledPlayRate, 
+						ScaledPlayRate_Montage, 
 						1, 
 						0.0f, 
 						0.0f);
 
-					const float AnimationAngle = FMath::Sign(TurnInPlaceAngle_Strafing)
-						* ( (FMath::Abs(TurnInPlaceAngle_Strafing) < 130.0f ) ? 90.0f : 180.0f);
+					const float AnimationAngle = FMath::Sign(TurnInPlaceAngle_Montage)
+						* ( (FMath::Abs(TurnInPlaceAngle_Montage) < 130.0f ) ? 90.0f : 180.0f);
 					//	(实际旋转角度 / 动画的旋转角度) * 播放速率 = 旋转倍率 * 播放速率 = 修正后的旋转倍率
-					TurnInPlaceAngleModifier = (TurnInPlaceAngle_Strafing / AnimationAngle) * ScaledPlayRate;
+					TurnInPlaceAngleModifier_Montage = (TurnInPlaceAngle_Montage / AnimationAngle) * ScaledPlayRate_Montage;
 				}
 			}
 		}
@@ -414,6 +414,7 @@ void UBaseAnimInstance::TurnInPlace_Strafing(TSoftObjectPtr<UChooserTable> CT_Tu
 	const float RotationAmount = GetCurveValue(RotationAmountCurveName);
 	if (FMath::Abs(RotationAmount) > 0.0f)
 	{
+		//乘上DeltaTime用来适应不同帧率
 		AsBaseController->AddActorWorldRotation(FRotator(
 			0.0f, 
 			RotationAmount * 45.0f * DeltaTimeX, 
