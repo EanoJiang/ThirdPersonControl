@@ -1339,6 +1339,89 @@ IdleState
 
 ![1789530959502](https://img2024.cnblogs.com/blog/3614909/202609/3614909-20260916115606984-1959098716.gif)
 
+# Part20 Strafing模式下的动画状态机配置
+
+## 选择器表
+
+### 动画蓝图
+
+```C++
+	//Strafing模式下的人物方向
+	UPROPERTY(BlueprintReadWrite, Category = "CharacterRotation")
+	ECardinalDirection VelocityCardinalDirection = ECardinalDirection::Forward;
+```
+
+### CT_StartState
+
+添加左右脚标记、MotionSpeed曲线
+
+> 添加左右脚标记详见：[动画序列添加左右脚标记、RotateAlpha曲线修改器](#动画序列添加左右脚标记rotatealpha曲线修改器)
+> MotionSpeed曲线修改器详见：[动画序列添加MotionSpeed曲线](#动画序列添加motionspeed曲线)
+
+Walk
+
+![1789544372485](https://img2024.cnblogs.com/blog/3614909/202609/3614909-20260916210550022-2057330618.png)
+
+![1789546468825](https://img2024.cnblogs.com/blog/3614909/202609/3614909-20260916210550510-1136045577.png)
+
+![1789546537328](https://img2024.cnblogs.com/blog/3614909/202609/3614909-20260916210550728-1202299890.png)
+
+Run
+
+![1789546642759](https://img2024.cnblogs.com/blog/3614909/202609/3614909-20260916210550951-1037540557.png)
+
+![1789546676143](https://img2024.cnblogs.com/blog/3614909/202609/3614909-20260916210551139-1004743446.png)
+
+![1789546682804](https://img2024.cnblogs.com/blog/3614909/202609/3614909-20260916210551381-2028490786.png)
+
+### CT_CycleState
+
+添加左右脚标记、MotionSpeed曲线
+
+> 添加左右脚标记详见：[动画序列添加左右脚标记、RotateAlpha曲线修改器](#动画序列添加左右脚标记rotatealpha曲线修改器)
+> MotionSpeed曲线修改器详见：[动画序列添加MotionSpeed曲线](#动画序列添加motionspeed曲线)
+
+Walk
+
+![1789547314859](https://img2024.cnblogs.com/blog/3614909/202609/3614909-20260916210551700-1429023156.png)
+
+![1789547106506](https://img2024.cnblogs.com/blog/3614909/202609/3614909-20260916210551906-625987691.png)
+
+![1789547179126](https://img2024.cnblogs.com/blog/3614909/202609/3614909-20260916210552113-1243378269.png)
+
+Run
+
+![1789547302726](https://img2024.cnblogs.com/blog/3614909/202609/3614909-20260916210552379-1612444030.png)
+
+![1789547245925](https://img2024.cnblogs.com/blog/3614909/202609/3614909-20260916210552603-1152248726.png)
+
+![1789547254203](https://img2024.cnblogs.com/blog/3614909/202609/3614909-20260916210552805-1224260830.png)
+
+### CT_StopState
+
+添加Distance曲线
+
+> 添加Distance曲线操作详见：[【动画序列添加Distance曲线修改器】](#动画序列添加distance曲线修改器)
+
+Walk
+
+![1789547464014](https://img2024.cnblogs.com/blog/3614909/202609/3614909-20260916210553048-1716426012.png)
+
+![1789547440994](https://img2024.cnblogs.com/blog/3614909/202609/3614909-20260916210553264-642095475.png)
+
+![1789548112377](https://img2024.cnblogs.com/blog/3614909/202609/3614909-20260916210553488-882435494.png)
+
+Run
+
+![1789548158796](https://img2024.cnblogs.com/blog/3614909/202609/3614909-20260916210553717-1180423804.png)
+
+![1789548095561](https://img2024.cnblogs.com/blog/3614909/202609/3614909-20260916210553951-910216242.png)
+
+![1789548232965](https://img2024.cnblogs.com/blog/3614909/202609/3614909-20260916210554177-429740730.png)
+
+## 运动逻辑
+
+## 状态机
 
 # Part999_1 根据当前抬起的脚选择Start和Stop动画
 

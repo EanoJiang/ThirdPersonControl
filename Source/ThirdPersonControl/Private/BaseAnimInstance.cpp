@@ -17,6 +17,7 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/Pawn.h"
 #include "Kismet/KismetMathLibrary.h"
+#include "Kismet/KismetSystemLibrary.h"
 
 UBaseAnimInstance::UBaseAnimInstance() = default;
 
@@ -348,6 +349,27 @@ void UBaseAnimInstance::UpdateCurrentStateName(FName StateName)
 	}
 }
 
+void UBaseAnimInstance::UpdateCurrentAnimSequenceName(FAnimNodeReference Node, UAnimSequenceBase* Montage)
+{
+	const UAnimSequenceBase* Sequence = nullptr;
+	if (const FAnimNode_SequencePlayer* SequencePlayer = Node.GetAnimNodePtr<FAnimNode_SequencePlayer>())
+	{
+		Sequence = SequencePlayer->GetSequence();
+	}
+	else if (const FAnimNode_SequenceEvaluator* SequenceEvaluator = Node.GetAnimNodePtr<FAnimNode_SequenceEvaluator>())
+	{
+		Sequence = SequenceEvaluator->GetSequence();
+	}
+	CurrentAnimSequenceName = UKismetSystemLibrary::GetDisplayName(Sequence);
+	
+	//如果传入的是Montage
+	if (Montage)
+	{
+		CurrentAnimSequenceName = UKismetSystemLibrary::GetDisplayName(Montage);
+	}
+	
+}
+
 void UBaseAnimInstance::UpdateStateData_TurnInPlace()
 {
 	bShouldTurnInPlace_Rotating = false;
@@ -384,15 +406,18 @@ void UBaseAnimInstance::TurnInPlace_Montage(TSoftObjectPtr<UChooserTable> CT_Tur
 		{
 			if (UChooserTable* ChooserTable = CT_TurnInPlace_Montage.LoadSynchronous())
 			{
-				UAnimSequenceBase* Animation = Cast<UAnimSequenceBase>(
+				UAnimSequenceBase* MontageToPlay = Cast<UAnimSequenceBase>(
 					UChooserFunctionLibrary::EvaluateChooser(
 						this, 
 						ChooserTable, 
 						UAnimSequenceBase::StaticClass()));
-				if (IsValid(Animation) && !IsPlayingSlotAnimation(Animation, SlotName))
+				if (IsValid(MontageToPlay) && !IsPlayingSlotAnimation(MontageToPlay, SlotName))
 				{
+					//Debug
+					UpdateCurrentAnimSequenceName(MontageToPlay);
+					//动态播放蒙太奇
 					PlaySlotAnimationAsDynamicMontage(
-						Animation, 
+						MontageToPlay, 
 						SlotName,
 						0.2f, 
 						0.25f, 

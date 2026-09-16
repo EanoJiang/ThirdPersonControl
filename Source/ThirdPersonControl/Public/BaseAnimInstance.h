@@ -7,6 +7,8 @@
 #include "Animation/AnimExecutionContext.h"
 #include "Animation/AnimNodeReference.h"
 #include "BaseControllerData.h"
+#include "Animation/AnimNode_SequencePlayer.h"
+#include "AnimNodes/AnimNode_SequenceEvaluator.h"
 #include "BaseAnimInstance.generated.h"
 
 class ABaseController;
@@ -80,7 +82,9 @@ public:
 	
 	UPROPERTY(BlueprintReadWrite, Category = "CharacterState")
 	FName CurrentStateName = FName("None");
-
+	UPROPERTY(BlueprintReadWrite, Category = "AnimSequence")
+	FString CurrentAnimSequenceName;
+	
 	//旋转模式下，是否原地转身
 	UPROPERTY(BlueprintReadWrite, Category = "TurnInPlace")
 	bool bShouldTurnInPlace_Rotating = false;
@@ -98,7 +102,10 @@ public:
 	//限制TurnInPlace的旋转修正倍率
 	UPROPERTY(BlueprintReadWrite, Category = "TurnInPlace_Montage")
 	float TurnInPlaceAngleModifier_Montage;
-
+	
+	//Strafing模式下的人物方向
+	UPROPERTY(BlueprintReadWrite, Category = "CharacterRotation")
+	ECardinalDirection VelocityCardinalDirection = ECardinalDirection::Forward;
 
 #pragma endregion Variables
 
@@ -140,6 +147,17 @@ public:
 	void TurnInPlace_Montage(TSoftObjectPtr<UChooserTable> CT_TurnInPlace_Montage);
 
 
+#pragma region 记录当前播放的动画序列名
+	//记录当前播放的动画序列名
+	UFUNCTION(BlueprintCallable, Category = "Animation|Sequence", meta = (BlueprintThreadSafe))
+	void UpdateCurrentAnimSequenceName(FAnimNodeReference Node, UAnimSequenceBase* Montage);
+	//重载
+	void UpdateCurrentAnimSequenceName(UAnimSequenceBase* Montage)
+	{
+		UpdateCurrentAnimSequenceName(FAnimNodeReference(), Montage);
+	}
+#pragma endregion 
+	
 #pragma region 记录当前状态名
 	void UpdateCurrentStateName(FName StateName);
 	UFUNCTION(BlueprintCallable, Category = "Animation|State", meta = (BlueprintThreadSafe))

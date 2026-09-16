@@ -10,7 +10,7 @@ public class ThirdPersonControl : ModuleRules
 	
 		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore" });
 
-		PrivateDependencyModuleNames.AddRange(new string[] { "Chooser" });
+		PrivateDependencyModuleNames.AddRange(new string[] { "Chooser", "AnimGraphRuntime"});
 
 		// Uncomment if you are using Slate UI
 		// PrivateDependencyModuleNames.AddRange(new string[] { "Slate", "SlateCore" });
