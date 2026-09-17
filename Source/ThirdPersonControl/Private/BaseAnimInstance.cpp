@@ -174,6 +174,10 @@ void UBaseAnimInstance::UpdateEssentialData()
 	if (AsBaseController != nullptr)
 	{
 		bIsStrafing = RotationMode != ERotationMode::Rotating;
+		
+		VelocityLocomotionAngle = CalculateDirection(MovementComponent->Velocity, AsBaseController->GetActorRotation());
+			
+		VelocityCardinalDirection = SelectCardinalDirection(VelocityCardinalDirection, VelocityLocomotionAngle, 10, bIsMoving);
 	}
 
 	//Sequence 4:	AnimPlaySpeed
@@ -445,4 +449,45 @@ void UBaseAnimInstance::TurnInPlace_Montage(TSoftObjectPtr<UChooserTable> CT_Tur
 			RotationAmount * 45.0f * DeltaTimeX, 
 			0.0f));
 	}
+}
+
+ECardinalDirection UBaseAnimInstance::SelectCardinalDirection(
+	const ECardinalDirection CurrentDirection,
+	const float CurrentAngle,
+	const float DeadZone,
+	const bool bUseCurrentDirection) const
+{
+	const float AbsoluteAngle = FMath::Abs(CurrentAngle);
+	float FwdDeadZone = DeadZone;
+	float BwdDeadZone = DeadZone;
+
+	if (bUseCurrentDirection)
+	{
+		switch (CurrentDirection)
+		{
+		case ECardinalDirection::Backward:
+			BwdDeadZone *= 2.0f;
+			break;
+		case ECardinalDirection::Forward:
+			FwdDeadZone *= 2.0f;
+			break;
+		default:
+			break;
+		}
+	}
+
+	//[-45 - 死区， 45 + 死区] 
+	if (AbsoluteAngle <= 45.0f + FwdDeadZone)
+	{
+		return ECardinalDirection::Forward;
+	}
+
+	//[-∞, -135 - 死区]∪[130 + 死区, ∞]
+	if (AbsoluteAngle >= 135.0f - BwdDeadZone)
+	{
+		return ECardinalDirection::Backward;
+	}
+
+	//剩下的<0就是左，>0就是右
+	return CurrentAngle > 0.0f ? ECardinalDirection::Right : ECardinalDirection::Left;
 }

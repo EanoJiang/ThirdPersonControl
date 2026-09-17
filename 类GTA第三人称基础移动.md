@@ -1198,7 +1198,7 @@ RunToWalk
 
 ![1789392023671](https://img2024.cnblogs.com/blog/3614909/202609/3614909-20260914212027639-1339322873.gif)
 
-# Part19 Strafing模式的原地转身
+# Part17 Strafing模式的原地转身
 
 ![1789444311841](https://img2024.cnblogs.com/blog/3614909/202609/3614909-20260915212225602-1941106566.png)
 
@@ -1339,7 +1339,7 @@ IdleState
 
 ![1789530959502](https://img2024.cnblogs.com/blog/3614909/202609/3614909-20260916115606984-1959098716.gif)
 
-# Part20 Strafing模式下的动画状态机配置
+# Part18 Strafing模式下的动画蓝图配置
 
 ## 选择器表
 
@@ -1347,7 +1347,7 @@ IdleState
 
 ```C++
 	//Strafing模式下的人物方向
-	UPROPERTY(BlueprintReadWrite, Category = "CharacterRotation")
+	UPROPERTY(BlueprintReadWrite, Category = "CharacterRotation|Strafing")
 	ECardinalDirection VelocityCardinalDirection = ECardinalDirection::Forward;
 ```
 
@@ -1421,7 +1421,106 @@ Run
 
 ## 运动逻辑
 
-## 状态机
+```C++
+	//Strafing模式下的Locomotion角度
+	UPROPERTY(BlueprintReadWrite, Category = "CharacterRotation|Strafing")
+	float VelocityLocomotionAngle = 0.0f;
+```
+
+```C++
+	//根据移动角度选择方向，并扩大当前前后方向的死区。
+	UFUNCTION(BlueprintPure, Category = "CharacterRotation|Strafing", meta = (HideSelfPin = "true"))
+	ECardinalDirection SelectCardinalDirection(
+		ECardinalDirection CurrentDirection,
+		float CurrentAngle,
+		float DeadZone,
+		bool bUseCurrentDirection) const;
+```
+
+```C++
+ECardinalDirection UBaseAnimInstance::SelectCardinalDirection(
+	const ECardinalDirection CurrentDirection,
+	const float CurrentAngle,
+	const float DeadZone,
+	const bool bUseCurrentDirection) const
+{
+	const float AbsoluteAngle = FMath::Abs(CurrentAngle);
+	float FwdDeadZone = DeadZone;
+	float BwdDeadZone = DeadZone;
+
+	if (bUseCurrentDirection)
+	{
+		switch (CurrentDirection)
+		{
+		case ECardinalDirection::Backward:
+			BwdDeadZone *= 2.0f;
+			break;
+		case ECardinalDirection::Forward:
+			FwdDeadZone *= 2.0f;
+			break;
+		default:
+			break;
+		}
+	}
+
+	//[-45 - 死区， 45 + 死区] 
+	if (AbsoluteAngle <= 45.0f + FwdDeadZone)
+	{
+		return ECardinalDirection::Forward;
+	}
+
+	//[-∞, -135 - 死区]∪[130 + 死区, ∞]
+	if (AbsoluteAngle >= 135.0f - BwdDeadZone)
+	{
+		return ECardinalDirection::Backward;
+	}
+
+	//剩下的<0就是左，>0就是右
+	return CurrentAngle > 0.0f ? ECardinalDirection::Right : ECardinalDirection::Left;
+}
+```
+
+在UpdateEssentialData中设置VelocityLocomotionAngle和VelocityCardinalDirection
+
+```C++
+void UBaseAnimInstance::UpdateEssentialData()
+{
+	//Sequence 0:	RotationMode
+		//Sequence 1:	bIsMoving	LastVelocityRotation
+		//Sequence 2:	bHasInput	LastInputRotation
+
+
+	//Sequence 3:	bIsStrafing
+	if (AsBaseController != nullptr)
+	{
+		bIsStrafing = RotationMode != ERotationMode::Rotating;
+
+		VelocityLocomotionAngle = CalculateDirection(MovementComponent->Velocity, AsBaseController->GetActorRotation());
+	
+		VelocityCardinalDirection = SelectCardinalDirection(VelocityCardinalDirection, VelocityLocomotionAngle, 10, bIsMoving);
+	}
+
+	//Sequence 4:	AnimPlaySpeed
+}
+```
+
+死区取10，VelocityCardinalDirection分布如图
+
+![1789638059931](https://img2024.cnblogs.com/blog/3614909/202609/3614909-20260917193302107-719818029.png)
+
+## 添加OrientationWarping
+
+> 只在StartState和CycleState中添加：Start、Cycle_Walk、Cycle_Run、Cycle_WalkToRun、Cycle_RunToWalk
+
+![1789639473920](https://img2024.cnblogs.com/blog/3614909/202609/3614909-20260917193302721-1841846134.png)
+
+![1789639542072](https://img2024.cnblogs.com/blog/3614909/202609/3614909-20260917193303019-263148714.png)
+
+## 效果
+
+![1789644777892](https://img2024.cnblogs.com/blog/3614909/202609/3614909-20260917193304826-1802543167.gif)
+
+# Part19 切换旋转模式时的伪Spine效果
 
 # Part999_1 根据当前抬起的脚选择Start和Stop动画
 

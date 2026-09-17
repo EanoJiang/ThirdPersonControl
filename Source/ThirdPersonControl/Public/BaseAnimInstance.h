@@ -104,8 +104,12 @@ public:
 	float TurnInPlaceAngleModifier_Montage;
 	
 	//Strafing模式下的人物方向
-	UPROPERTY(BlueprintReadWrite, Category = "CharacterRotation")
+	UPROPERTY(BlueprintReadWrite, Category = "CharacterRotation|Strafing")
 	ECardinalDirection VelocityCardinalDirection = ECardinalDirection::Forward;
+	//Strafing模式下的Locomotion角度
+	UPROPERTY(BlueprintReadWrite, Category = "CharacterRotation|Strafing")
+	float VelocityLocomotionAngle = 0.0f;
+
 
 #pragma endregion Variables
 
@@ -145,6 +149,14 @@ public:
 	//播放原地转身动画蒙太奇并应用旋转曲线控制实际角色转身角度
 	UFUNCTION(BlueprintCallable, Category = "CharacterRotation", meta = (HideSelfPin = "true"))
 	void TurnInPlace_Montage(TSoftObjectPtr<UChooserTable> CT_TurnInPlace_Montage);
+
+	//根据移动角度选择方向，并扩大当前前后方向的死区。
+	UFUNCTION(BlueprintPure, Category = "CharacterRotation|Strafing", meta = (HideSelfPin = "true"))
+	ECardinalDirection SelectCardinalDirection(
+		ECardinalDirection CurrentDirection,
+		float CurrentAngle,
+		float DeadZone,
+		bool bUseCurrentDirection) const;
 
 
 #pragma region 记录当前播放的动画序列名
