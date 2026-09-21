@@ -108,8 +108,15 @@ public:
 	ECardinalDirection VelocityCardinalDirection = ECardinalDirection::Forward;
 	//Strafing模式下的Locomotion角度
 	UPROPERTY(BlueprintReadWrite, Category = "CharacterRotation|Strafing")
-	float VelocityLocomotionAngle = 0.0f;
+	float VelocityLocomotionAngle = 90.0f;
 
+	//快速切换到Cycle
+	UPROPERTY(BlueprintReadWrite, Category = "CharacterState")
+	bool bQuickSwitchToCycle;
+	//Start状态下的RotationMode
+	UPROPERTY(BlueprintReadWrite, Category = "CharacterRotation|StartState")
+	ERotationMode RotationMode_StartState = ERotationMode::Rotating;
+	
 
 #pragma endregion Variables
 

@@ -7,6 +7,7 @@
 #include "Chooser.h"
 #include "ChooserFunctionLibrary.h"
 #include "CanvasItem.h"
+#include "KismetAnimationLibrary.h"
 #include "Debug/DebugDrawService.h"
 #include "Engine/Canvas.h"
 #include "Engine/Engine.h"
@@ -175,7 +176,7 @@ void UBaseAnimInstance::UpdateEssentialData()
 	{
 		bIsStrafing = RotationMode != ERotationMode::Rotating;
 		
-		VelocityLocomotionAngle = CalculateDirection(MovementComponent->Velocity, AsBaseController->GetActorRotation());
+		VelocityLocomotionAngle = UKismetAnimationLibrary::CalculateDirection(MovementComponent->Velocity, AsBaseController->GetActorRotation());
 			
 		VelocityCardinalDirection = SelectCardinalDirection(VelocityCardinalDirection, VelocityLocomotionAngle, 10, bIsMoving);
 	}
@@ -329,7 +330,7 @@ void UBaseAnimInstance::SmoothControlRotation(const float TargetInterpSpeed, con
 	//PrimaryRotation = ControlRotation.Yaw
 	const FRotator ControlRotation = AsBaseController->GetControlRotation();
 	const FRotator TargetRotation(0.0f, ControlRotation.Yaw, 0.0f);
-	PrimaryRotation = FMath::RInterpTo(
+	PrimaryRotation = FMath::RInterpConstantTo(
 		PrimaryRotation,
 		TargetRotation,
 		DeltaTimeX,

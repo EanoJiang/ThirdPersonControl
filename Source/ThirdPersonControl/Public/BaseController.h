@@ -44,6 +44,10 @@ public:
 	UPROPERTY(BlueprintReadWrite, Category = "Input")
 	bool bShouldAim = false;
 	
+	//是否切换到Rotating模式
+	UPROPERTY(BlueprintReadWrite, Category = "RotationMode")
+	bool bIsSwitchToRotating = false;
+	
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;

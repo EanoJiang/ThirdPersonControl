@@ -582,7 +582,7 @@ void UBaseAnimInstance::SmoothControlRotation(const float TargetInterpSpeed, con
 	//PrimaryRotation = ControlRotation.Yaw
 	const FRotator ControlRotation = AsBaseController->GetControlRotation();
 	const FRotator TargetRotation(0.0f, ControlRotation.Yaw, 0.0f);
-	PrimaryRotation = FMath::RInterpTo(
+	PrimaryRotation = FMath::RInterpConstantTo(
 		PrimaryRotation,
 		TargetRotation,
 		DeltaTimeX,
@@ -921,9 +921,9 @@ void UBaseAnimInstance::UpdateEssentialData()
 
 ![1788869441095](https://img2024.cnblogs.com/blog/3614909/202609/3614909-20260909193557271-41142523.png)
 
-勾上InterpResult可以消除起步时的warping导致的掰腿卡顿现象
+开启Clamp Result，勾上InterpResult可以消除起步时的warping导致的掰腿卡顿现象
 
-![1788870484179](https://img2024.cnblogs.com/blog/3614909/202609/3614909-20260909193557509-995018357.png)
+![1789977714707](https://img2024.cnblogs.com/blog/3614909/202609/3614909-20260921162406052-159395146.png)
 
 # Part11 Cycle和同步组的设置
 
@@ -1192,7 +1192,7 @@ RunToWalk
 
 加一个跳转条件保证：**只有不在禁止步态切换期间动画**、**且步态还没切换到目标步态** 才会切过去，并且该条件的优先级需要低一档
 
-![img](https://img2024.cnblogs.com/blog/3614909/202609/3614909-20260914211920501-1963646741.png)
+![](https://img2024.cnblogs.com/blog/3614909/202609/3614909-20260921162407640-2012807979.png)
 
 ## 效果
 
@@ -1495,8 +1495,8 @@ void UBaseAnimInstance::UpdateEssentialData()
 	{
 		bIsStrafing = RotationMode != ERotationMode::Rotating;
 
-		VelocityLocomotionAngle = CalculateDirection(MovementComponent->Velocity, AsBaseController->GetActorRotation());
-	
+		VelocityLocomotionAngle = UKismetAnimationLibrary::CalculateDirection(MovementComponent->Velocity, AsBaseController->GetActorRotation());
+
 		VelocityCardinalDirection = SelectCardinalDirection(VelocityCardinalDirection, VelocityLocomotionAngle, 10, bIsMoving);
 	}
 
@@ -1521,6 +1521,18 @@ void UBaseAnimInstance::UpdateEssentialData()
 ![1789644777892](https://img2024.cnblogs.com/blog/3614909/202609/3614909-20260917193304826-1802543167.gif)
 
 # Part19 切换旋转模式时的伪Spine效果
+
+角色蓝图新增标志位
+
+```C++
+	//是否切换到Rotating模式
+	UPROPERTY(BlueprintReadWrite, Category = "RotationMode")
+	bool bIsSwitchToRotating = false;
+```
+
+IA_Strafe中切换到Rotating时为true，下一tick重置为false
+
+![1789963387541](https://img2024.cnblogs.com/blog/3614909/202609/3614909-20260921162407930-1606692761.png)
 
 # Part999_1 根据当前抬起的脚选择Start和Stop动画
 
