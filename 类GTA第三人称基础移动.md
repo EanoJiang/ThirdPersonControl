@@ -1534,7 +1534,7 @@ IA_Strafe中切换到Rotating时为true，下一tick重置为false
 
 ![1789963387541](https://img2024.cnblogs.com/blog/3614909/202609/3614909-20260921162407930-1606692761.png)
 
-# Part999_1 根据当前抬起的脚选择Start和Stop动画
+# Part999_1 根据当前抬起的脚选择Start
 
 # Part999_2 移动时的身体倾斜
 
