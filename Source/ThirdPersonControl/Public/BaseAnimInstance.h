@@ -112,7 +112,7 @@ public:
 
 	//快速切换到Cycle
 	UPROPERTY(BlueprintReadWrite, Category = "CharacterState")
-	bool bQuickSwitchToCycle;
+	bool bRotatingStartSwitchToStrafingCycle;
 	//Start状态下的RotationMode
 	UPROPERTY(BlueprintReadWrite, Category = "CharacterRotation|StartState")
 	ERotationMode RotationMode_StartState = ERotationMode::Rotating;

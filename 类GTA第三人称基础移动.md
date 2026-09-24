@@ -1522,7 +1522,9 @@ void UBaseAnimInstance::UpdateEssentialData()
 
 # Part19 切换旋转模式时的伪Spine效果
 
-角色蓝图新增标志位
+## 角色蓝图
+
+角色蓝图新增标志位bIsSwitchToRotating
 
 ```C++
 	//是否切换到Rotating模式
@@ -1530,9 +1532,57 @@ void UBaseAnimInstance::UpdateEssentialData()
 	bool bIsSwitchToRotating = false;
 ```
 
-IA_Strafe中切换到Rotating时为true，下一tick重置为false
+IA_Strafe中切换到Rotating时为true，下一tick再重置为false
 
 ![1789963387541](https://img2024.cnblogs.com/blog/3614909/202609/3614909-20260921162407930-1606692761.png)
+
+## 动画蓝图
+
+AnimSetup_Start中，记录Start状态时的旋转模式RotationMode_StartState
+
+```C++
+	//Start状态下的RotationMode
+	UPROPERTY(BlueprintReadWrite, Category = "CharacterRotation|StartState")
+	ERotationMode RotationMode_StartState = ERotationMode::Rotating;
+```
+
+![1790234684758](https://img2024.cnblogs.com/blog/3614909/202609/3614909-20260924172218274-1590558793.png)
+
+AnimUpdate_Start中，
+
+在Set Sequence之后声明bRotatingStartSwitchToStrafingCycle变量：Start状态时是Rotating模式&当前Strafing模式
+
+```C++
+	//快速切换到Cycle
+	UPROPERTY(BlueprintReadWrite, Category = "CharacterState")
+	bool bRotatingStartSwitchToStrafingCycle;
+```
+
+![1790235678118](https://img2024.cnblogs.com/blog/3614909/202609/3614909-20260924172218775-1007421896.png)
+
+AnimSetup_Cycle中重置bRotatingStartSwitchToStrafingCycle为false
+
+![1790235721791](https://img2024.cnblogs.com/blog/3614909/202609/3614909-20260924172219001-89193054.png)
+
+## 状态机Start<->Cycle跳转条件
+
+Cycle->Start：bIsSwitchToRotating==true & 当前状态已完全过渡到Cycle&不是前进方向(否则前进时切换到Rotating也会触发TurnInPlace_Montage)
+
+Start->Cycle：bRotatingStartSwitchToStrafingCycle
+
+![](https://img2024.cnblogs.com/blog/3614909/202609/3614909-20260924172219603-1557695349.png)
+
+## 解决start状态时从strafing切换到rotating的姿势过渡生硬
+
+![1790237913103](https://img2024.cnblogs.com/blog/3614909/202609/3614909-20260924172221296-371740252.png)
+
+## 效果
+
+![1790241722251](https://img2024.cnblogs.com/blog/3614909/202609/3614909-20260924172223892-1903438526.gif)
+
+# Part20 Jump状态机拆分
+
+
 
 # Part999_1 根据当前抬起的脚选择Start
 
