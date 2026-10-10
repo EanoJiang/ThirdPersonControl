@@ -1,0 +1,19 @@
+GraphShot 1.4 - Windows x64 / Unreal Engine 5.8.1
+Built with changelist 56057345, BuildId 55116800.
+
+Changes:
+- Fix SVG icons appearing as squares or missing arrows on the first capture.
+  Prepaint at the capture size, process shared Slate atlas resource updates,
+  then repaint and read back the final image without ticking live editor windows.
+- Includes the 1.3 state-machine selected-node capture crash fix.
+
+Validation:
+- GraphShot.Rendering.ColdSvgCapture passed in an offscreen UE 5.8.1 editor process.
+- A unique SVG resource rendered correctly on first use at 64x64 and a new 93x93 size.
+- Both sizes produced a green center (0,255,0,255) and transparent corner (0,0,0,0).
+- UE AutomationTool BuildPlugin succeeded for Win64.
+- The user's ABP_Hero graph has not been visually retested in this session.
+
+Installation:
+Close the editor and replace the project's Plugins/GraphShot folder with this folder.
+Runtime active-state colors still require the appropriate running debug instance.

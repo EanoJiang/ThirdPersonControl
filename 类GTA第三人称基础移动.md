@@ -1,47 +1,6 @@
-```
-	//Rotating模式下判断是否需原地转身
-	UFUNCTION(BlueprintCallable, Category = "CharacterRotation", meta = (HideSelfPin = "true"))
-	void TurnInPlace_Rotating();
-```
-
-```
-	//当前为手柄输入
-	UPROPERTY(BlueprintReadWrite, Category = "Input")
-	bool bIsGamepadInput = false;
-```
-
-```
-void UBaseAnimInstance::UpdateLeftFootUp()
-{
-	USkeletalMeshComponent* OwningComponent = GetOwningComponent();
-	APawn* PawnOwner = TryGetPawnOwner();
-	if (OwningComponent == nullptr || PawnOwner == nullptr)
-	{
-		bIsLeftFootUp = false;
-		return;
-	}
-
-	static const FName LeftFootSocketName(TEXT("foot_l"));
-	static const FName RightFootSocketName(TEXT("foot_r"));
-
-	const FVector LeftFootDirection =
-		OwningComponent->GetSocketLocation(LeftFootSocketName).GetSafeNormal2D(0.0001f);
-	const FVector RightFootDirection =
-		OwningComponent->GetSocketLocation(RightFootSocketName).GetSafeNormal2D(0.0001f);
-	const FVector VelocityDirection =
-		PawnOwner->GetVelocity().GetSafeNormal2D(0.0001f);
-	//局部速度方向
-	const FVector LocalVelocityDirection =
-		OwningComponent->GetComponentRotation().UnrotateVector(VelocityDirection);
-
-	const float LeftFootDot =
-		FVector::DotProduct(LeftFootDirection, LocalVelocityDirection);
-	const float RightFootDot =
-		FVector::DotProduct(LocalVelocityDirection, RightFootDirection);
-
-	bIsLeftFootUp = LeftFootDot > RightFootDot;
-}
-```
+> Git仓库：[github.com/EanoJiang/ThirdPersonControl
+> ](https://github.com/EanoJiang/ThirdPersonControl)演示视频：[
+> ](https://github.com/EanoJiang/ThirdPersonControl)
 
 # Part 01 自定义数据类型：枚举和结构体
 
@@ -1582,13 +1541,122 @@ Start->Cycle：bRotatingStartSwitchToStrafingCycle
 
 # Part20 Jump状态机拆分
 
+## CT_JumpStartState
+
+![1791601364731](https://img2024.cnblogs.com/blog/3614909/202610/3614909-20261010112316978-1749375326.png)
+
+![1791601374742](https://img2024.cnblogs.com/blog/3614909/202610/3614909-20261010112317489-261528128.png)
+
+![1791601389132](https://img2024.cnblogs.com/blog/3614909/202610/3614909-20261010112317733-320063454.png)
+
+## 动画蓝图UpdateEssentialData
+
+```C++
+	//角色胶囊体底部到地面的高度
+	UPROPERTY(BlueprintReadWrite, Category = "CharacterMovement")
+	float DistanceToFloor;
+```
+
+```C++
+void UBaseAnimInstance::UpdateEssentialData()
+{
+	//Sequence 0:	RotationMode
+
+		//Sequence 1:	bIsMoving	LastVelocityRotation
 
 
-# Part999_1 根据当前抬起的脚选择Start
+		//Sequence 2:	bHasInput	LastInputRotation
 
-# Part999_2 移动时的身体倾斜
 
-# Part999_3 不同方向起步的时机限制
+	//Sequence 3:	bIsStrafing
+
+
+	//Sequence 4:	AnimPlaySpeed
+
+
+	//Sequence 5:	DistanceToFloor（仅在下降时更新，其余情况保留原值）
+	if (AsBaseController != nullptr && MovementComponent != nullptr
+		&& MovementComponent->MovementMode == MOVE_Falling
+		&& MovementComponent->Velocity.Z > -20.0f)
+	{
+		FFindFloorResult FloorResult;
+		MovementComponent->ComputeFloorDist(
+			AsBaseController->GetActorLocation(), 0.0f, 10000.0f, FloorResult, 35.0f);
+		DistanceToFloor = FloorResult.FloorDist;
+	}
+}
+```
+
+## Jump状态机
+
+![](https://img2024.cnblogs.com/blog/3614909/202610/3614909-20261010112318323-1397258992.png)
+
+JumpEntry / FallLand ->JumpStart：WantToJumpStart
+
+![1791600532566](https://img2024.cnblogs.com/blog/3614909/202610/3614909-20261010112318705-2014861711.png)
+
+FallLoop / JumpStart -> FallLand：WantToFallLand
+
+![1791600628162](https://img2024.cnblogs.com/blog/3614909/202610/3614909-20261010112318916-1243459057.png)
+
+FallLand -> ToIdle：(Inertiaization)
+
+![1791600664226](https://img2024.cnblogs.com/blog/3614909/202610/3614909-20261010112319195-781830411.png)
+
+剩余条件：Automatic
+
+### JumpState
+
+![1791600780889](https://img2024.cnblogs.com/blog/3614909/202610/3614909-20261010112319405-1875701096.png)
+
+![1791600788525](https://img2024.cnblogs.com/blog/3614909/202610/3614909-20261010112319618-1930971141.png)
+
+### FallLoopState
+
+> 勾选LoopAnimation
+
+![1791600808150](https://img2024.cnblogs.com/blog/3614909/202610/3614909-20261010112319875-944509689.png)
+
+![1791600813674](https://img2024.cnblogs.com/blog/3614909/202610/3614909-20261010112320155-2058473239.png)
+
+### FallLandState
+
+![](https://img2024.cnblogs.com/blog/3614909/202610/3614909-20261010112320504-1828682253.png)
+
+#### FallLand_Light资产
+
+添加ANS_RootMotionMode，并设置bInterruptRoorMotion=false，也就是不能被移动输入打断：
+
+![1791601179690](https://img2024.cnblogs.com/blog/3614909/202610/3614909-20261010112320780-846664309.png)
+
+![1791601081359](https://img2024.cnblogs.com/blog/3614909/202610/3614909-20261010112321203-940712323.png)
+
+![1791601230481](https://img2024.cnblogs.com/blog/3614909/202610/3614909-20261010112321497-2055970223.png)
+
+> 注意：考虑到原地转身动画需要被移动输入打断，把CT_TurnInPlaceState_Rotating用到资产中的ANS_RootMotionMode设置bInterruptRoorMotion=true
+> ![1791601652720](https://img2024.cnblogs.com/blog/3614909/202610/3614909-20261010112321697-1575366264.png)
+
+#### FallLand_Heavy资产
+
+设置为Additive Anim：
+
+![1791601107893](https://img2024.cnblogs.com/blog/3614909/202610/3614909-20261010112321926-92762368.png)
+
+## 让跳跃落地动画播完才进行下一次跳跃
+
+只有当没有在播放RootMotion时才会触发Jump(这个判定条件需要根据具体项目来，以防止对于其他RootMotion在播放时不能跳跃)
+
+![1791601867777](https://img2024.cnblogs.com/blog/3614909/202610/3614909-20261010112322147-1997747564.png)
+
+## 效果
+
+![1791602261423](https://img2024.cnblogs.com/blog/3614909/202610/3614909-20261010112324458-925100126.gif)
+
+# Part999_1 移动时的身体倾斜
+
+> 参考Lyra：[www.cnblogs.com/eanojiang/p/19364383#10-lean-animations-intermediate](https://www.cnblogs.com/eanojiang/p/19364383#10-lean-animations-intermediate)
+
+# Part999_2 不同方向起步的时机限制
 
 ![1789380171128](https://img2024.cnblogs.com/blog/3614909/202609/3614909-20260914211923701-2876125.gif)
 

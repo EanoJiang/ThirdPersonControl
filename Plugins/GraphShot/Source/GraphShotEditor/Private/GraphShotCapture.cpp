@@ -2,6 +2,8 @@
 
 #include "GraphShotCapture.h"
 #include "GraphShotClipboard.h"
+#include "GraphShotWidgetRendering.h"
+#include "AnimationStateMachineSchema.h"
 
 #include "EdGraph/EdGraph.h"
 #include "EdGraph/EdGraphNode.h"
@@ -35,6 +37,82 @@
 
 // SGraphPanel's registered Slate type name (SWidget::GetType).
 static const FName GraphPanelTypeName(TEXT("SGraphPanel"));
+
+// State-machine policies resolve transition endpoints through a node-to-geometry
+// map, including nodes whose widgets are hidden for a selection capture. Supply
+// those geometries only to the wire pass, never to the panel's node paint pass.
+class FGraphShotStateMachinePolicy : public FConnectionDrawingPolicy
+{
+public:
+	FGraphShotStateMachinePolicy(int32 BackLayer, int32 FrontLayer, float Zoom,
+		const FSlateRect& Clip, FSlateWindowElementList& Elements,
+		FConnectionDrawingPolicy* InPolicy, TSharedRef<FArrangedChildren> InNodes)
+		: FConnectionDrawingPolicy(BackLayer, FrontLayer, Zoom, Clip, Elements)
+		, Policy(InPolicy), Nodes(InNodes)
+	{
+	}
+
+	virtual void Draw(TMap<TSharedRef<SWidget>, FArrangedWidget>& Pins, FArrangedChildren& ArrangedNodes) override
+	{
+		// Preserve the engine's arranged geometry (including second-pass transition
+		// layout), then append only endpoints omitted by visibility/culling.
+		FArrangedChildren CompleteNodes(EVisibility::All);
+		TSet<TSharedRef<SWidget>> Present;
+		for (int32 Index = 0; Index < ArrangedNodes.Num(); ++Index)
+		{
+			CompleteNodes.AddWidget(ArrangedNodes[Index]);
+			Present.Add(ArrangedNodes[Index].Widget);
+		}
+		for (int32 Index = 0; Index < Nodes->Num(); ++Index)
+		{
+			if (!Present.Contains((*Nodes)[Index].Widget))
+			{
+				CompleteNodes.AddWidget((*Nodes)[Index]);
+			}
+		}
+		Policy->SetAbsoluteMousePosition(AbsoluteMousePosition);
+		Policy->SetSelectedNodes(SelectedGraphNodes);
+		Policy->Draw(Pins, CompleteNodes);
+		SplineOverlapResult = Policy->SplineOverlapResult;
+	}
+
+private:
+	TUniquePtr<FConnectionDrawingPolicy> Policy;
+	TSharedRef<FArrangedChildren> Nodes;
+};
+
+class FGraphShotNodeFactory : public FGraphNodeFactory
+{
+public:
+	explicit FGraphShotNodeFactory(TSharedRef<FArrangedChildren> InNodes) : Nodes(InNodes) {}
+	virtual ~FGraphShotNodeFactory() = default;
+
+	virtual TSharedPtr<SGraphNode> CreateNodeWidget(UEdGraphNode* Node) override
+	{
+		return FNodeFactory::CreateNodeWidget(Node);
+	}
+
+	virtual TSharedPtr<SGraphPin> CreatePinWidget(UEdGraphPin* Pin) override
+	{
+		return FNodeFactory::CreatePinWidget(Pin);
+	}
+
+	virtual FConnectionDrawingPolicy* CreateConnectionPolicy(const UEdGraphSchema* Schema,
+		int32 BackLayer, int32 FrontLayer, float Zoom, const FSlateRect& Clip,
+		FSlateWindowElementList& Elements, UEdGraph* Graph) override
+	{
+		FConnectionDrawingPolicy* Policy = FNodeFactory::CreateConnectionPolicy(
+			Schema, BackLayer, FrontLayer, Zoom, Clip, Elements, Graph);
+		if (Policy && Schema && Schema->IsA<UAnimationStateMachineSchema>())
+		{
+			return new FGraphShotStateMachinePolicy(BackLayer, FrontLayer, Zoom, Clip, Elements, Policy, Nodes);
+		}
+		return Policy;
+	}
+
+private:
+	TSharedRef<FArrangedChildren> Nodes;
+};
 
 // ---------------------------------------------------------------------------
 // Color-matching knobs (live; no recompile needed).
@@ -246,6 +324,7 @@ public:
 	void Construct(const SGraphPanel::FArguments& InArgs)
 	{
 		SGraphPanel::Construct(InArgs);
+		SetNodeFactory(MakeShared<FGraphShotNodeFactory>(ConnectionNodes));
 	}
 
 	virtual int32 OnPaint(
@@ -256,6 +335,9 @@ public:
 		int32 LayerId,
 		const FWidgetStyle& InWidgetStyle,
 		bool bParentEnabled) const override;
+
+private:
+	TSharedRef<FArrangedChildren> ConnectionNodes = MakeShared<FArrangedChildren>(EVisibility::All);
 };
 
 int32 SGraphShotPanel::OnPaint(
@@ -267,10 +349,30 @@ int32 SGraphShotPanel::OnPaint(
 	const FWidgetStyle& InWidgetStyle,
 	bool bParentEnabled) const
 {
+	const bool bStateMachine = GraphObj && GraphObj->GetSchema()
+		&& GraphObj->GetSchema()->IsA<UAnimationStateMachineSchema>();
+	ConnectionNodes->Empty();
+	if (bStateMachine)
+	{
+		for (int32 Index = 0; Index < Children.Num(); ++Index)
+		{
+			const TSharedRef<SNode> Node = Children[Index];
+			ConnectionNodes->AddWidget(AllottedGeometry.MakeChild(
+				Node, Node->GetPosition2f() - GetViewOffset(), Node->GetDesiredSize(), GetZoomAmount()));
+		}
+	}
+
 	// Let the base panel paint the background, the selected node bodies (shadows/comments/overlays/popups),
 	// and the wires it already knows how to draw: selected<->selected, and selected<->culled-unselected
 	// (the cull path synthesizes geometry for off-screen nodes, hidden or not, and draws their wires).
 	const int32 SuperMaxLayerId = SGraphPanel::OnPaint(Args, AllottedGeometry, MyCullingRect, OutDrawElements, LayerId, InWidgetStyle, bParentEnabled);
+
+	// State-machine wires use state bounds, not pin bounds. The wrapped engine
+	// policy above owns that pass; the supplemental pin-based pass is for other graphs.
+	if (bStateMachine)
+	{
+		return SuperMaxLayerId;
+	}
 
 	if (!GraphObj)
 	{
@@ -683,7 +785,7 @@ bool FGraphShotCapture::CaptureToClipboard()
 	// See the cvar comments above for why neither is a perfect match and how to tune GraphShot.Gamma.
 	const bool bUseGamma = CVarGraphShotUseGamma.GetValueOnGameThread() != 0;
 	FWidgetRenderer Renderer(/*bUseGammaCorrection=*/bUseGamma, /*bInClearTarget=*/true);
-	UTextureRenderTarget2D* RenderTarget = Renderer.DrawWidget(Panel.ToSharedRef(), FVector2D((double)Width, (double)Height));
+	UTextureRenderTarget2D* RenderTarget = GraphShotRenderWidget(Renderer, Panel.ToSharedRef(), FVector2D((double)Width, (double)Height));
 	if (!RenderTarget)
 	{
 		Notify(LOCTEXT("RenderFail", "Failed to render the graph."), true);

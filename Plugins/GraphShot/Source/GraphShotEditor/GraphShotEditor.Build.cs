@@ -19,6 +19,7 @@ public class GraphShotEditor : ModuleRules
 				"AppFramework",     // toolbar/menu builder helpers
 				"UnrealEd",         // FAssetEditorToolkit (shared toolbar extender), UToolMenus host, notifications
 				"GraphEditor",      // SGraphPanel, SNodePanel, SGraphNode, FNodeFactory (temp panel + bounds)
+				"AnimGraph",        // UAnimationStateMachineSchema (state endpoint geometry during capture)
 				"RHI",              // GetMax2DTextureDimension, FReadSurfaceDataFlags, RCM_UNorm
 				"RenderCore",       // FlushRenderingCommands, FRenderTarget plumbing
 				"UMG",              // FWidgetRenderer, UTextureRenderTarget2D draw path

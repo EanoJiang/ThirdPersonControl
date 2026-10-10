@@ -188,6 +188,17 @@ void UBaseAnimInstance::UpdateEssentialData()
 	AnimPlaySpeed = static_cast<float>(
 		FMath::Clamp(SpeedRatio, 0.8, 1.1)
 		);
+
+	//Sequence 5:	DistanceToFloor（仅在下降时更新，其余情况保留原值）
+	if (AsBaseController != nullptr && MovementComponent != nullptr
+		&& MovementComponent->MovementMode == MOVE_Falling
+		&& MovementComponent->Velocity.Z > -20.0f)
+	{
+		FFindFloorResult FloorResult;
+		MovementComponent->ComputeFloorDist(
+			AsBaseController->GetActorLocation(), 0.0f, 10000.0f, FloorResult, 35.0f);
+		DistanceToFloor = FloorResult.FloorDist;
+	}
 }
 
 void UBaseAnimInstance::UpdateGroundGait()

@@ -1,7 +1,7 @@
 {
 	"FileVersion": 3,
-	"Version": 3,
-	"VersionName": "1.2",
+	"Version": 5,
+	"VersionName": "1.4",
 	"FriendlyName": "GraphShot",
 	"Description": "Capture complete screenshots of any graph editor (all nodes, including off-screen) to the clipboard.",
 	"Category": "Editor",
@@ -10,10 +10,16 @@
 	"DocsURL": "",
 	"MarketplaceURL": "",
 	"SupportURL": "",
+	"EngineVersion": "5.8.1",
 	"CanContainContent": false,
-	"IsBetaVersion": false,
-	"IsExperimentalVersion": false,
-	"Installed": false,
+	"Installed": true,
+	"Modules": [
+		{
+			"Name": "GraphShotEditor",
+			"Type": "Editor",
+			"LoadingPhase": "Default"
+		}
+	],
 	"Plugins": [
 		{
 			"Name": "ControlRig",
@@ -22,13 +28,6 @@
 		{
 			"Name": "RigVM",
 			"Enabled": true
-		}
-	],
-	"Modules": [
-		{
-			"Name": "GraphShotEditor",
-			"Type": "Editor",
-			"LoadingPhase": "Default"
 		}
 	]
 }

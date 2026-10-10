@@ -117,6 +117,9 @@ public:
 	UPROPERTY(BlueprintReadWrite, Category = "CharacterRotation|StartState")
 	ERotationMode RotationMode_StartState = ERotationMode::Rotating;
 	
+	//角色胶囊体底部到地面的高度
+	UPROPERTY(BlueprintReadWrite, Category = "CharacterMovement")
+	float DistanceToFloor;
 
 #pragma endregion Variables
 
@@ -225,6 +228,21 @@ public:
 	void OnStateEntry_TurnInPlace_Strafing(const FAnimUpdateContext& Context,const FAnimNodeReference& Node)
 	{
 		UpdateCurrentStateName(FName("TurnInPlace_Strafing"));
+	}
+	UFUNCTION(BlueprintCallable, Category = "Animation|State", meta = (BlueprintThreadSafe))
+	void OnStateEntry_JumpStart(const FAnimUpdateContext& Context,const FAnimNodeReference& Node)
+	{
+		UpdateCurrentStateName(FName("JumpStart"));
+	}	
+	UFUNCTION(BlueprintCallable, Category = "Animation|State", meta = (BlueprintThreadSafe))
+	void OnStateEntry_FallLoop(const FAnimUpdateContext& Context,const FAnimNodeReference& Node)
+	{
+		UpdateCurrentStateName(FName("FallLoop"));
+	}
+	UFUNCTION(BlueprintCallable, Category = "Animation|State", meta = (BlueprintThreadSafe))
+	void OnStateEntry_FallLand(const FAnimUpdateContext& Context,const FAnimNodeReference& Node)
+	{
+		UpdateCurrentStateName(FName("FallLand"));
 	}
 	
 #pragma endregion
