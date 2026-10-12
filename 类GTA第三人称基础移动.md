@@ -1,5 +1,5 @@
 > Git仓库：[github.com/EanoJiang/ThirdPersonControl
-> ](https://github.com/EanoJiang/ThirdPersonControl)演示视频：[
+> ](https://github.com/EanoJiang/ThirdPersonControl)演示视频：[www.bilibili.com/video/BV19CpX6AEXn](https://www.bilibili.com/video/BV19CpX6AEXn)[
 > ](https://github.com/EanoJiang/ThirdPersonControl)
 
 # Part 01 自定义数据类型：枚举和结构体
